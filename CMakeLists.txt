@@ -150,7 +150,7 @@ include_directories(
 # )
 
 add_executable(offb_coords         #new lines - noor
-  src/offb_node.cpp
+  src/offb_offb_coords.cpp
 )
 add_dependencies(offb_coords 
   ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
