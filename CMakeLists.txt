@@ -149,6 +149,26 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+add_executable(offb_coords         #new lines - noor
+  src/offb_node.cpp
+)
+add_dependencies(offb_coords 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(offb_coords
+  ${catkin_LIBRARIES}
+)
+
+add_executable(offb_node         #new lines - noor
+  src/offb_node.cpp
+)
+add_dependencies(offb_node 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(offb_node
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
