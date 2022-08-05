@@ -16,14 +16,22 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 }
 
 double x_current = 0;
+double y_current = 0;
+double z_current = 0;
 std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
 
 void cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
-    ROS_INFO("Hi");   //msg.pose.position.x);
-    ROS_INFO_STREAM("Received pose: " << msg);
     x_current = msg->pose.position.x;
+    y_current = msg->pose.position.y;
+    z_current = msg->pose.position.z;
+    ROS_INFO("X: ");
     ROS_INFO_STREAM(x_current);
+    ROS_INFO("Y: ");
+    ROS_INFO_STREAM(y_current);
+    ROS_INFO("Z: ");
+    ROS_INFO_STREAM(z_current);
+    ROS_INFO(" ");
     pose.push_back(msg);
 }
 
@@ -31,8 +39,8 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "offb_coords");
     ros::NodeHandle nh;
-    
-    ros::init(argc, argv, "sub");
+
+    //ros::init(argc, argv, "sub");
     ros::NodeHandle nk;
     ros::Subscriber sub = nk.subscribe("mavros/local_position/pose", 1000, cb);
 
@@ -128,7 +136,7 @@ int main(int argc, char **argv)
 
         if(current_state.mode == "OFFBOARD" && current_state.armed && order == 1) {
             pose = pose1;
-            if(ros::Time::now() - fly_time > ros::Duration(6.0)) { 
+            if((ros::Time::now() - fly_time > ros::Duration(6.0)) && z_current > (pose1.pose.position.z - 0.1)) { 
                 order++;
                 ROS_INFO("Going to Pose 2");
             }
