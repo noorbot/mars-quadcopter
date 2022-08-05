@@ -52,7 +52,7 @@ int main(int argc, char **argv)
     pose2.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose3;
-    pose3.pose.position.x = 1;
+    pose3.pose.position.x = 0.75;
     pose3.pose.position.y = 0.75;
     pose3.pose.position.z = 1;
 
