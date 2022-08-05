@@ -159,6 +159,16 @@ target_link_libraries(offb_coords
   ${catkin_LIBRARIES}
 )
 
+add_executable(offb_coords_sub         #new lines - noor
+  src/offb_coords_sub.cpp
+)
+add_dependencies(offb_coords_sub 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(offb_coords_sub
+  ${catkin_LIBRARIES}
+)
+
 add_executable(offb_node         #new lines - noor
   src/offb_node.cpp
 )
