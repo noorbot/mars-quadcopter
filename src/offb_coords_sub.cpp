@@ -20,7 +20,7 @@ std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
 
 void cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
-    ROS_INFO("Hi");   //msg.pose.position.x);
+    // ROS_INFO("Hi");   //msg.pose.position.x);
     ROS_INFO_STREAM("Received pose: " << msg);
     x_current = msg->pose.position.x;
     ROS_INFO_STREAM(x_current);
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 
         if(current_state.mode == "OFFBOARD" && current_state.armed && order == 1) {
             pose = pose1;
-            if(ros::Time::now() - fly_time > ros::Duration(6.0)) { 
+            if((ros::Time::now() - fly_time > ros::Duration(6.0))) { 
                 order++;
                 ROS_INFO("Going to Pose 2");
             }

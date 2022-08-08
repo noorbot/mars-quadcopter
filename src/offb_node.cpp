@@ -10,9 +10,19 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 
+std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
+double x_current = 0;
+
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
+}
+
+void tf_callback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+    ROS_INFO_STREAM("Received pose: " << msg);
+    x_current = msg->pose.position.x;
+    ROS_INFO_STREAM(x_current);
+    pose.push_back(msg);
 }
 
 int main(int argc, char **argv)
@@ -28,6 +38,11 @@ int main(int argc, char **argv)
             ("mavros/cmd/arming");
     ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>
             ("mavros/set_mode");
+//
+ros::init(argc, argv, "subscriberTF");
+    ros::NodeHandle nk;
+    ros::Subscriber subscribetf = nk.subscribe("mavros/local_position/pose", 100, tf_callback);
+
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
