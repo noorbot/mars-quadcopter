@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find mavros)/launch/px4.launch"></include>
+    <include file="$(find mocap_optitrack)/launch/mocap_px4.launch"></include>
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch"></include>
+    <include file="$(find aruco_detect)/launch/aruco_detect.launch"></include>
+</launch>
