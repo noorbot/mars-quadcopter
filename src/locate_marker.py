@@ -79,6 +79,7 @@ def locate_marker():
 if __name__ == '__main__':
     try:
         locate_marker()
+        rospy.loginfo('test')
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

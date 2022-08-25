@@ -154,7 +154,7 @@ int main(int argc, char **argv)
             }
         }
 
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
+        /*else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
             pose = pose6;
             if(ros::Time::now() - fly_time > ros::Duration(33.0)) { 
                 order++;
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
                 ROS_INFO("LANDING");
                 
             }
-        }
+        }*/
 
         
 

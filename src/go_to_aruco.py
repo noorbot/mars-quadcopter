@@ -5,23 +5,20 @@ from geometry_msgs.msg import PoseStamped
 from actionlib_msgs.msg import GoalID
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
+from mavros_msgs.msg import State
+from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest
 
-
-flag = False    # flag to only send return goal once
+#flag = True   # flag to only send return goal once
 markerGoal = PoseStamped()    # PoseStamped object to be published as the goal
+markerGoal_Down = PoseStamped()    # PoseStamped object to be published as the goal
 
+current_state = State()
 
-# callback function for /tb3_init_pose subscription 
-def locate_callback_0(data):
-    if (data != None and flag == True):
-        global markerGoal
+def state_cb(msg):
+    global current_state
+    current_state = msg
 
-        # populate PoseStamped object with the data received
-        markerGoal.pose.position.x = data.pose.position.x
-        markerGoal.pose.position.y = data.pose.position.y
-        markerGoal.pose.position.z = 1.0
-        markerGoal.pose.orientation.w = 1.0                               #WHAT DO WE MAKE ORIENTATION? nEED TO GO HEAD ON
-
+rospy.loginfo('we are in the top of the code')
 
 # callback function for /tb3_init_pose subscription 
 def locate_callback_1(data):
@@ -31,8 +28,16 @@ def locate_callback_1(data):
         # populate PoseStamped object with the data received
         markerGoal.pose.position.x = data.pose.position.x
         markerGoal.pose.position.y = data.pose.position.y
-        markerGoal.pose.position.z = 0.0
-        markerGoal.pose.orientation.w = 1.0                         
+        markerGoal.pose.position.z = 1.0
+        markerGoal.pose.orientation.w = 1.0   
+
+        global markerGoal_Down
+
+        # populate PoseStamped object with the data received
+        markerGoal_Down.pose.position.x = data.pose.position.x
+        markerGoal_Down.pose.position.y = data.pose.position.y
+        markerGoal_Down.pose.position.z = 0.0
+        markerGoal_Down.pose.orientation.w = 1.0                        
 
 def go_to_marker():
     rospy.loginfo('GOING TO ARUCO')
@@ -50,22 +55,37 @@ def go_to_marker():
     rate = rospy.Rate(10)
 
     while not rospy.is_shutdown():
-        if (flag == True):  # Check condition for explore_lite completion
-            goal = markerGoal
+        #if (flag == True):  # Check condition for explore_lite completion
+        goal = markerGoal
 
-            # publish the PoseStamped object goal
-            publisher.publish(goal)
-            rospy.sleep(50)
+        # go to marker and hover above
+        publisher.publish(goal)
+
+        rospy.sleep(50)
+
+        # go down in z
+        goal = markerGoal_Down
+        publisher.publish(goal)
+        rospy.sleep(50)
+
+        #land
+        offb_set_mode = SetModeRequest()
+        offb_set_mode.custom_mode = 'AUTO.LAND'
+        set_mode_client.call(offb_set_mode).mode_sent 
+
             
             # set flag to false to prevent repeated sending of the goal
-            global flag
-            flag = False
+            #global flag
+            #flag = False
 
         rate.sleep()
 
 if __name__ == '__main__':
     try:
         go_to_marker()
+        rospy.loginfo('we are in main')
+        state_sub = rospy.Subscriber("mavros/state", State, callback = state_cb)
         rospy.spin()
     except rospy.ROSInterruptException:
+        rospy.loginfo('njsdfkhsdkjf')
         pass

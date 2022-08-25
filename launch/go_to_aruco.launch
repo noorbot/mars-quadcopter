@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="mars-quadcopter" type="go_to_aruco.py" name="go_to_aruco" output="screen"></node>
+
+</launch>
