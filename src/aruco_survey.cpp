@@ -11,6 +11,7 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 }
 
 geometry_msgs::PoseStamped markerGoal;
+geometry_msgs::PoseStamped markerGoal_down;
 
 //std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
 std::vector<visualization_msgs::Marker::ConstPtr> pose;
@@ -20,14 +21,18 @@ void cb(const visualization_msgs::Marker::ConstPtr& data)
     markerGoal.pose.position.x = data->pose.position.x;
     markerGoal.pose.position.y = data->pose.position.y;
     markerGoal.pose.position.z = 1.0;
-    ROS_INFO("X: ");
-    ROS_INFO_STREAM(markerGoal.pose.position.x);
-    ROS_INFO("Y: ");
-    ROS_INFO_STREAM(markerGoal.pose.position.y);
-    ROS_INFO("Z: ");
-    ROS_INFO_STREAM(markerGoal.pose.position.z);
-    ROS_INFO(" ");
-    pose.push_back(data);
+
+    markerGoal_down.pose.position.x = data->pose.position.x;
+    markerGoal_down.pose.position.y = data->pose.position.y;
+    markerGoal_down.pose.position.z = 0.0;
+    // ROS_INFO("X: ");
+    // ROS_INFO_STREAM(markerGoal.pose.position.x);
+    // ROS_INFO("Y: ");
+    // ROS_INFO_STREAM(markerGoal.pose.position.y);
+    // ROS_INFO("Z: ");
+    // ROS_INFO_STREAM(markerGoal.pose.position.z);
+    // ROS_INFO(" ");
+    // pose.push_back(data);
 }
 
 int main(int argc, char **argv)
@@ -83,6 +88,7 @@ int main(int argc, char **argv)
     pose5.pose.position.x = 0;
     pose5.pose.position.y = 0;
     pose5.pose.position.z = 1;
+
 
 
     //send a few setpoints before starting
@@ -166,7 +172,15 @@ int main(int argc, char **argv)
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
             pose = markerGoal;
-            if(ros::Time::now() - fly_time > ros::Duration(33.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(37.0)) { 
+                order++;
+                ROS_INFO("Going to Aruco");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 7) {
+            pose = markerGoal_down;
+            if(ros::Time::now() - fly_time > ros::Duration(45.0)) { 
                 order++;
                 offb_set_mode.request.custom_mode = "AUTO.LAND"; 
                 set_mode_client.call(offb_set_mode);
