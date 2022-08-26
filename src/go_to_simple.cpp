@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
@@ -11,13 +12,14 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 
 geometry_msgs::PoseStamped markerGoal;
 
-std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
+//std::vector<geometry_msgs::PoseStamped::ConstPtr> pose;
+std::vector<visualization_msgs::Marker::ConstPtr> pose;
 
-void cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
+void cb(const visualization_msgs::Marker::ConstPtr& data)
 {
-    markerGoal.pose.position.x = msg->pose.position.x;
-    markerGoal.pose.position.y = msg->pose.position.y;
-    markerGoal.pose.position.z = msg->pose.position.z;
+    markerGoal.pose.position.x = data->pose.position.x;
+    markerGoal.pose.position.y = data->pose.position.y;
+    markerGoal.pose.position.z = data->pose.position.z;
     ROS_INFO("X: ");
     ROS_INFO_STREAM(markerGoal.pose.position.x);
     ROS_INFO("Y: ");
@@ -25,7 +27,7 @@ void cb(const geometry_msgs::PoseStamped::ConstPtr& msg)
     ROS_INFO("Z: ");
     ROS_INFO_STREAM(markerGoal.pose.position.z);
     ROS_INFO(" ");
-    pose.push_back(msg);
+    pose.push_back(data);
 }
 
 int main(int argc, char **argv)
@@ -34,7 +36,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
 
     ros::NodeHandle nk;
-    ros::Subscriber sub = nk.subscribe("visulization_marker/ArUco_Location_1", 1000, cb);
+    ros::Subscriber sub = nk.subscribe<visualization_msgs::Marker>("visulization_marker/ArUco_Location_1", 1000, cb);
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
             ("mavros/state", 10, state_cb);
@@ -93,7 +95,7 @@ int main(int argc, char **argv)
             }
         }
 
-        local_pos_pub.publish(pose);
+        local_pos_pub.publish(markerGoal);
 
         ros::spinOnce();
         rate.sleep();
