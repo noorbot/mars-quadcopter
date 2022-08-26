@@ -19,7 +19,7 @@ void cb(const visualization_msgs::Marker::ConstPtr& data)
 {
     markerGoal.pose.position.x = data->pose.position.x;
     markerGoal.pose.position.y = data->pose.position.y;
-    markerGoal.pose.position.z = data->pose.position.z;
+    markerGoal.pose.position.z = 1.0;
     ROS_INFO("X: ");
     ROS_INFO_STREAM(markerGoal.pose.position.x);
     ROS_INFO("Y: ");
@@ -57,13 +57,37 @@ int main(int argc, char **argv)
     }
 
     geometry_msgs::PoseStamped pose;
-    pose.pose.position.x = 0;
-    pose.pose.position.y = 0;
-    pose.pose.position.z = 2;
+
+
+    geometry_msgs::PoseStamped pose1;
+    pose1.pose.position.x = 0;
+    pose1.pose.position.y = 0;
+    pose1.pose.position.z = 1;
+
+    geometry_msgs::PoseStamped pose2;
+    pose2.pose.position.x = 0.75;
+    pose2.pose.position.y = 0;
+    pose2.pose.position.z = 1;
+
+    geometry_msgs::PoseStamped pose3;
+    pose3.pose.position.x = 0.75;
+    pose3.pose.position.y = 0.75;
+    pose3.pose.position.z = 1;
+
+    geometry_msgs::PoseStamped pose4;
+    pose4.pose.position.x = -0.5;
+    pose4.pose.position.y = 0.75;
+    pose4.pose.position.z = 1;
+
+    geometry_msgs::PoseStamped pose5;
+    pose5.pose.position.x = 0;
+    pose5.pose.position.y = 0;
+    pose5.pose.position.z = 1;
+
 
     //send a few setpoints before starting
     for(int i = 100; ros::ok() && i > 0; --i){
-        local_pos_pub.publish(pose);
+        local_pos_pub.publish(pose1);
         ros::spinOnce();
         rate.sleep();
     }
@@ -75,6 +99,8 @@ int main(int argc, char **argv)
     arm_cmd.request.value = true;
 
     ros::Time last_request = ros::Time::now();
+    int order = 0;
+    ros::Time fly_time = ros::Time::now();
 
     while(ros::ok()){
         if( current_state.mode != "OFFBOARD" &&
@@ -92,10 +118,64 @@ int main(int argc, char **argv)
                     ROS_INFO("Vehicle armed");
                 }
                 last_request = ros::Time::now();
+                fly_time = ros::Time::now();
+                order++;
+                ROS_INFO("Going to Pose 1");
             }
         }
 
-        local_pos_pub.publish(markerGoal);
+        if(current_state.mode == "OFFBOARD" && current_state.armed && order == 1) {
+            pose = pose1;
+            if(ros::Time::now() - fly_time > ros::Duration(6.0)) { 
+                order++;
+                ROS_INFO("Going to Pose 2");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 2) {
+            pose = pose2;
+            if(ros::Time::now() - fly_time > ros::Duration(12.0)) { 
+                order++;
+                ROS_INFO("Going to Pose 3");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 3) {
+            pose = pose3;
+            if(ros::Time::now() - fly_time > ros::Duration(18.0)) { 
+                order++;
+                ROS_INFO("Going to Pose 4");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 4) {
+            pose = pose4;
+            if(ros::Time::now() - fly_time > ros::Duration(24.0)) { 
+                order++;
+                ROS_INFO("Going to Pose 5");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 5) {
+            pose = pose5;
+            if(ros::Time::now() - fly_time > ros::Duration(30.0)) { 
+                order++;
+                ROS_INFO("Going to Aruco");
+            }
+        }
+
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
+            pose = markerGoal;
+            if(ros::Time::now() - fly_time > ros::Duration(33.0)) { 
+                order++;
+                offb_set_mode.request.custom_mode = "AUTO.LAND"; 
+                set_mode_client.call(offb_set_mode);
+                ROS_INFO("LANDING");
+                
+            }
+        }
+
+        local_pos_pub.publish(pose);
 
         ros::spinOnce();
         rate.sleep();

@@ -189,6 +189,16 @@ target_link_libraries(go_to_simple
   ${catkin_LIBRARIES}
 )
 
+add_executable(aruco_survey         #new lines - noor
+  src/aruco_survey.cpp
+)
+add_dependencies(aruco_survey 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(aruco_survey
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
