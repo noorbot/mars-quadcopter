@@ -179,6 +179,16 @@ target_link_libraries(offb_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(go_to_simple         #new lines - noor
+  src/go_to_simple.cpp
+)
+add_dependencies(go_to_simple 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(go_to_simple
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

@@ -1,12 +1,9 @@
 #! /usr/bin/env python3
 
-from io import StringIO
+
 import rospy
 from geometry_msgs.msg import PoseStamped
-from actionlib_msgs.msg import GoalID
-from std_msgs.msg import String
 from visualization_msgs.msg import Marker
-
 from mavros_msgs.msg import State
 from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest
 
@@ -89,8 +86,10 @@ def go_to_marker():
                     rospy.loginfo("Vehicle armed")
             
                 last_req = rospy.Time.now()
+
         pose = markerGoal
         local_pos_pub.publish(pose)
+
 
         rate.sleep()
 
