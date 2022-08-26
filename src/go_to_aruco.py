@@ -20,9 +20,9 @@ def state_cb(msg):
 
 rospy.loginfo('we are in the top of the code')
 
-# callback function for /tb3_init_pose subscription 
+# callback function for the location of the aruco marker
 def locate_callback_1(data):
-    if (data != None and flag == True):
+    if (data != None): # and flag == True):
         global markerGoal
 
         # populate PoseStamped object with the data received
@@ -48,6 +48,10 @@ def go_to_marker():
     # subscribe to 
     rospy.Subscriber('visulization_marker/ArUco_Location_1', Marker, locate_callback_1)
 
+    state_sub = rospy.Subscriber("mavros/state", State, callback = state_cb)
+
+    rospy.wait_for_service("/mavros/set_mode")
+    set_mode_client = rospy.ServiceProxy("mavros/set_mode", SetMode)
 
     # Publisher obect to publish goal to return to origin
     publisher = rospy.Publisher('mavros/setpoint_position/local', PoseStamped, queue_size=50)
@@ -84,7 +88,6 @@ if __name__ == '__main__':
     try:
         go_to_marker()
         rospy.loginfo('we are in main')
-        state_sub = rospy.Subscriber("mavros/state", State, callback = state_cb)
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo('njsdfkhsdkjf')
