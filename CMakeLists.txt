@@ -199,6 +199,26 @@ target_link_libraries(aruco_survey
   ${catkin_LIBRARIES}
 )
 
+add_executable(aruco_survey_better         #new lines - noor
+  src/aruco_survey_better.cpp
+)
+add_dependencies(aruco_survey_better 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(aruco_survey_better
+  ${catkin_LIBRARIES}
+)
+
+add_executable(x_step_test         #new lines - noor
+  src/x_step_test.cpp
+)
+add_dependencies(x_step_test 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(x_step_test
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
