@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 5) {
             pose = pose5;
-            if(ros::Time::now() - fly_time > ros::Duration(30.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(34.0)) { 
                 order++;
                 ROS_INFO("Going to Aruco");
             }
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
             pose = markerGoal;
-            if(ros::Time::now() - fly_time > ros::Duration(37.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(41.0)) { 
                 order++;
                 ROS_INFO("Going to Aruco");
             }
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 7) {
             pose = markerGoal_down;
-            if(ros::Time::now() - fly_time > ros::Duration(45.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(48.0)) { 
                 order++;
                 offb_set_mode.request.custom_mode = "AUTO.LAND"; 
                 set_mode_client.call(offb_set_mode);
