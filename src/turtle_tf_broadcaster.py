@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import roslib
-roslib.load_manifest('learning_tf')
+
 import rospy
 
 import tf
@@ -25,20 +24,22 @@ def locate_callback_1(data):
         arucoPose.pose.orientation.w = 1.0   #may need to change to match aruco orientation
                      
 
-def turtle_tf_broadcaster(msg, turtlename):
+def turtle_tf_broadcaster():
 
     # initialize node
     rospy.init_node('turtle_tf_broadcaster')
 
     rospy.Subscriber('visulization_marker/ArUco_Location_1', Marker, locate_callback_1)
+    rate = rospy.Rate(20)
     
-
-    br = tf.TransformBroadcaster()
-    br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0), #pose
-                     (0,0,0,0), #rotation
-                     rospy.Time.now(), #time
-                     "robot_1/map", #child
-                     "map") #parent
+    while(not rospy.is_shutdown()):
+        br = tf.TransformBroadcaster()
+        br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0), #pose
+                        (0,0,0,0), #rotation
+                        rospy.Time.now(), #time
+                        "robot_1/map", #child
+                        "map") #parent
+        rate.sleep()
 
 if __name__ == '__main__':
     try:
