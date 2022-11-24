@@ -30,16 +30,14 @@ def turtle_tf_broadcaster():
     rospy.init_node('turtle_tf_broadcaster')
 
     rospy.Subscriber('visulization_marker/ArUco_Location_1', Marker, locate_callback_1)
-    rate = rospy.Rate(20)
-    
-    while(not rospy.is_shutdown()):
-        br = tf.TransformBroadcaster()
-        br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0), #pose
-                        (0,0,0,0), #rotation
-                        rospy.Time.now(), #time
-                        "robot_1/map", #child
-                        "map") #parent
-        rate.sleep()
+
+    br = tf.TransformBroadcaster()
+    br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0), #pose
+                    (0,0,0,0), #rotation
+                    rospy.Time.now(), #time
+                    "robot_1/map", #child
+                    "map") #parent
+
 
 if __name__ == '__main__':
     try:
