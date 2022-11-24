@@ -1,10 +1,6 @@
-#!/usr/bin/env python3
-
+#! /usr/bin/env python3
 import rospy
-
 import tf
-
-import rospy
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
@@ -32,11 +28,15 @@ def turtle_tf_broadcaster():
     rospy.Subscriber('visulization_marker/ArUco_Location_1', Marker, locate_callback_1)
 
     br = tf.TransformBroadcaster()
-    br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0), #pose
-                    (0,0,0,0), #rotation
-                    rospy.Time.now(), #time
-                    "robot_1/map", #child
-                    "map") #parent
+
+    rate = rospy.Rate(10.0)
+    while not rospy.is_shutdown():
+        br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0.0),
+                         (0.0, 0.0, 0.0, 1.0),
+                         rospy.Time.now(),
+                         "robot_1/map",
+                         "map")
+        rate.sleep()
 
 
 if __name__ == '__main__':
