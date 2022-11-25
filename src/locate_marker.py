@@ -20,7 +20,7 @@ def create_marker(trans, rot):
 
     # set shape, Arrow: 0; Cube: 1 ; Sphere: 2 ; Cylinder: 3
     marker.type = 2
-    marker.id = 0
+    marker.id = 3
 
     # Set the scale of the marker
     marker.scale.x = 0.2
@@ -59,7 +59,7 @@ def locate_marker():
     while not rospy.is_shutdown():
         try:
             # lookup transform between map and fiducial_0 
-            (trans,rot) = listener.lookupTransform('/map', '/fiducial_2', rospy.Time(0))
+            (trans,rot) = listener.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         
