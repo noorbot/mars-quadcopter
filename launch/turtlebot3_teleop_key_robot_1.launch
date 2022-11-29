@@ -1,0 +1,6 @@
+<launch>
+  <group ns="robot_1">
+  <node pkg="mars-quadcopter" type="turtlebot3_teleop_robot_1.py" name="turtlebot3_teleop_robot_1"  output="screen">
+  </node>
+  </group>
+</launch>
