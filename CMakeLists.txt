@@ -219,6 +219,16 @@ target_link_libraries(x_step_test
   ${catkin_LIBRARIES}
 )
 
+add_executable(IOT_coords         #new lines - noor
+  src/IOT_coords.cpp
+)
+add_dependencies(IOT_coords 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(IOT_coords
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
