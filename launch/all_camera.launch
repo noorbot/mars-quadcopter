@@ -1,0 +1,6 @@
+<launch>
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch"></include>
+    <include file="$(find aruco_detect)/launch/aruco_detect.launch"></include>
+    <include file="$(find mars-quadcopter)/launch/locate_marker.launch"></include>
+    <include file="$(find mars-quadcopter)/launch/turtle_tf_broadcaster.launch"></include>
+</launch>

@@ -23,9 +23,9 @@ def locate_callback_1(data):
 def turtle_tf_broadcaster():
 
     # initialize node
-    rospy.init_node('turtle_tf_broadcaster')
+    rospy.init_node('turtle_tf_broadcaster_3')
 
-    rospy.Subscriber('visulization_marker/ArUco_Location_1', Marker, locate_callback_1)
+    rospy.Subscriber('visulization_marker/ArUco_Location_3', Marker, locate_callback_1)
 
     br = tf.TransformBroadcaster()
 

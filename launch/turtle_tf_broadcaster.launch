@@ -1,3 +1,4 @@
 <launch>
-    <node pkg="mars-quadcopter" type="turtle_tf_broadcaster.py" name="turtle_tf_broadcaster" output="screen"></node>
+    <node pkg="mars-quadcopter" type="turtle_tf_broadcaster_1.py" name="turtle_tf_broadcaster_1" output="screen"></node>
+    <node pkg="mars-quadcopter" type="turtle_tf_broadcaster_3.py" name="turtle_tf_broadcaster_3" output="screen"></node>
 </launch>

@@ -51,27 +51,27 @@ int main(int argc, char **argv)
     pose1.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose2;
-    pose2.pose.position.x = 0.75;
+    pose2.pose.position.x = 1;
     pose2.pose.position.y = 0.75;
     pose2.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose3;
-    pose3.pose.position.x = -0.5;
+    pose3.pose.position.x = 0;
     pose3.pose.position.y = 0.75;
     pose3.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose4;
-    pose4.pose.position.x = 0.75;
+    pose4.pose.position.x = 1;
     pose4.pose.position.y = 0;
     pose4.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose5;
-    pose5.pose.position.x = -0.5;
-    pose5.pose.position.y = -0.5;
+    pose5.pose.position.x = 0;
+    pose5.pose.position.y = -0.75;
     pose5.pose.position.z = 1;
 
     geometry_msgs::PoseStamped pose6;
-    pose6.pose.position.x = 0.75;
+    pose6.pose.position.x = 1;
     pose6.pose.position.y = -0.75;
     pose6.pose.position.z = 1;
 
