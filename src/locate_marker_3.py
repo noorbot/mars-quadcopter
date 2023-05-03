@@ -20,7 +20,7 @@ def create_marker(trans, rot):
 
     # set shape, Arrow: 0; Cube: 1 ; Sphere: 2 ; Cylinder: 3
     marker.type = 2
-    marker.id = 3
+    marker.id = 3  # fiducial id
 
     # Set the scale of the marker
     marker.scale.x = 0.2
@@ -40,7 +40,7 @@ def create_marker(trans, rot):
     marker.pose.orientation.x = rot[0]
     marker.pose.orientation.y = rot[1]
     marker.pose.orientation.z = rot[2]
-    marker.pose.orientation.w = 1.0
+    marker.pose.orientation.w = rot[3]
     
     # return the Marker object
     return marker 
