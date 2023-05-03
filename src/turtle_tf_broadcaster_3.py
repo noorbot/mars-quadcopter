@@ -4,6 +4,8 @@ import tf
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from visualization_msgs.msg import Marker
+from pyquaternion import Quaternion
+
 
 
 arucoPose = PoseStamped()    # PoseStamped object to be published as the aruco position
@@ -34,8 +36,16 @@ def turtle_tf_broadcaster():
 
     rate = rospy.Rate(10.0)
     while not rospy.is_shutdown():
+
+        # Quaternion(w, x, y, z)
+        my_quat=Quaternion(arucoPose.pose.orientation.w, 0, 0, arucoPose.pose.orientation.z)
+        norm_quat = my_quat.normalised
+
+        if norm_quat == Quaternion(0,0,0,0):
+            norm_quat = Quaternion(1,0,0,0)
+
         br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0.0),
-                         (0.0, 0.0, arucoPose.pose.orientation.z, arucoPose.pose.orientation.w),
+                         (norm_quat.x, norm_quat.y, norm_quat.z, norm_quat.w),
                          rospy.Time.now(),
                          "robot_1/map",
                          "map")
