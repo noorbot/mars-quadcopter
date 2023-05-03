@@ -40,7 +40,7 @@ def create_marker(trans, rot):
     marker.pose.orientation.x = rot[0]
     marker.pose.orientation.y = rot[1]
     marker.pose.orientation.z = rot[2]
-    marker.pose.orientation.w = 1.0
+    marker.pose.orientation.w = rot[3]
     
     # return the Marker object
     return marker 

@@ -15,9 +15,12 @@ def locate_callback_1(data):
 
         # populate PoseStamped object with the data received
         arucoPose.pose.position.x = data.pose.position.x
-        arucoPose.pose.position.y = data.pose.position.y
+        arucoPose.pose.position.y = data.pose.position.y - 0.10
         arucoPose.pose.position.z = 0.0
-        arucoPose.pose.orientation.w = 1.0   #may need to change to match aruco orientation
+        arucoPose.pose.orientation.x = data.pose.orientation.x   #may need to change to match aruco orientation
+        arucoPose.pose.orientation.y = data.pose.orientation.y   #may need to change to match aruco orientation
+        arucoPose.pose.orientation.z = data.pose.orientation.z   #may need to change to match aruco orientation
+        arucoPose.pose.orientation.w = data.pose.orientation.w   #may need to change to match aruco orientation
                      
 
 def turtle_tf_broadcaster():
@@ -32,7 +35,7 @@ def turtle_tf_broadcaster():
     rate = rospy.Rate(10.0)
     while not rospy.is_shutdown():
         br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0.0),
-                         (0.0, 0.0, 0.0, 1.0),
+                         (0.0, 0.0, arucoPose.pose.orientation.z, arucoPose.pose.orientation.w),
                          rospy.Time.now(),
                          "robot_2/map",
                          "map")
