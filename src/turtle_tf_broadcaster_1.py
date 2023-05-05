@@ -15,8 +15,8 @@ def locate_callback_1(data):
         global arucoPose
 
         # populate PoseStamped object with the data received
-        arucoPose.pose.position.x = data.pose.position.x
-        arucoPose.pose.position.y = data.pose.position.y - 0.10  #10 cm offset from aruco marker to UGV centre
+        arucoPose.pose.position.x = data.pose.position.x - 0.10 #10 cm offset from aruco marker to UGV centre
+        arucoPose.pose.position.y = data.pose.position.y   
         arucoPose.pose.position.z = 0.0 # z position does not matter
         arucoPose.pose.orientation.x = data.pose.orientation.x 
         arucoPose.pose.orientation.y = data.pose.orientation.y
@@ -36,11 +36,11 @@ def turtle_tf_broadcaster():
     rate = rospy.Rate(10.0)
     while not rospy.is_shutdown():
 
-        # Quaternion(w, x, y, z)
-        my_quat=Quaternion(arucoPose.pose.orientation.w, 0, 0, arucoPose.pose.orientation.z)
+        # Quaternion(w, x, y, z)    MAY WANT TO LEAVE OUT X AND Y
+        my_quat=Quaternion(arucoPose.pose.orientation.w, arucoPose.pose.orientation.x, arucoPose.pose.orientation.y, arucoPose.pose.orientation.z)
         norm_quat = my_quat.normalised
 
-        if norm_quat == Quaternion(0,0,0,0):
+        if norm_quat == Quaternion(0,0,0,0): # before the aruco is found, this quaternion throws an error. Set to a default value
             norm_quat = Quaternion(1,0,0,0)
 
 
