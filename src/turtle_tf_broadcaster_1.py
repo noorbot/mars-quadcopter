@@ -52,11 +52,11 @@ def turtle_tf_broadcaster():
         # set the parameters for map merging initial poses (x, y, z, yaw)
         global do_once, aruco_found    # only do once, and wehen aruco is found
         if aruco_found == True and do_once == True:
-            rospy.set_param('/<robot_2>/map_merge/init_pose_x', arucoPose.pose.position.x)
-            rospy.set_param('/<robot_2/map_merge/init_pose_y', arucoPose.pose.position.y)
-            rospy.set_param('/<robot_2>/map_merge/init_pose_z', arucoPose.pose.position.z)
+            rospy.set_param('/robot_2/map_merge/init_pose_x', arucoPose.pose.position.x)
+            rospy.set_param('/robot_2/map_merge/init_pose_y', arucoPose.pose.position.y)
+            rospy.set_param('/robot_2/map_merge/init_pose_z', arucoPose.pose.position.z)
             (roll, pitch, yaw) = euler_from_quaternion([norm_quat.x, norm_quat.y,norm_quat.z, norm_quat.w]) # convert quaternion to RPY
-            rospy.set_param('/<robot_2>/map_merge/init_pose_yaw' , yaw)
+            rospy.set_param('/robot_2/map_merge/init_pose_yaw' , yaw)
             rospy.loginfo("PARAMS SET: " + str(arucoPose.pose.position.x) + " " + str(arucoPose.pose.position.y) + " " + str(arucoPose.pose.position.z) + " " + str(yaw))
             do_once = False
 
