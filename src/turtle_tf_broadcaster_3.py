@@ -6,6 +6,7 @@ from std_msgs.msg import String
 from visualization_msgs.msg import Marker
 from pyquaternion import Quaternion
 from tf.transformations import euler_from_quaternion
+import math
 
 
 
@@ -20,13 +21,15 @@ def locate_callback_1(data):
         global aruco_found
 
         # populate PoseStamped object with the data received
-        arucoPose.pose.position.x = data.pose.position.x - 0.10 #10 cm offset from aruco marker to UGV centre
-        arucoPose.pose.position.y = data.pose.position.y  
+        (rollx, pitchx, yawx) = euler_from_quaternion([data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]) # convert quaternion to RPY
+        arucoPose.pose.position.x = data.pose.position.x - 0.10*math.cos(yawx) #10 cm offset from aruco marker to UGV centre
+        arucoPose.pose.position.y = data.pose.position.y - 0.10*math.sin(yawx)
         arucoPose.pose.position.z = 0.0 # z position does not matter
         arucoPose.pose.orientation.x = data.pose.orientation.x 
         arucoPose.pose.orientation.y = data.pose.orientation.y
         arucoPose.pose.orientation.z = data.pose.orientation.z
         arucoPose.pose.orientation.w = data.pose.orientation.w
+        
 
         aruco_found = True # set true once aruco has been found and callback activated
                      
@@ -45,7 +48,7 @@ def turtle_tf_broadcaster():
 
         # Quaternion(w, x, y, z)    MAY WANT TO LEAVE OUT X AND Y
         # it is necessary to normalize the quaternion before sending the transform
-        my_quat=Quaternion(arucoPose.pose.orientation.w, arucoPose.pose.orientation.x, arucoPose.pose.orientation.y, arucoPose.pose.orientation.z)
+        my_quat=Quaternion(arucoPose.pose.orientation.w, 0, 0, arucoPose.pose.orientation.z)
         norm_quat = my_quat.normalised
 
         if norm_quat == Quaternion(0,0,0,0): # before the aruco is found, this quaternion throws an error. Set to a default value
