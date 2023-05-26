@@ -21,9 +21,9 @@ def locate_callback_1(data):
         global aruco_found
 
         # populate PoseStamped object with the data received
-        (rollx, pitchx, yawx) = euler_from_quaternion([data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]) # convert quaternion to RPY
-        arucoPose.pose.position.x = data.pose.position.x - 0.10*math.cos(yawx) #10 cm offset from aruco marker to UGV centre
-        arucoPose.pose.position.y = data.pose.position.y - 0.10*math.sin(yawx)
+        (aruco_roll, aruco_pitch, aruco_yaw) = euler_from_quaternion([data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]) # convert quaternion to RPY
+        arucoPose.pose.position.x = data.pose.position.x + 0.10*math.cos(aruco_yaw) # x position account for 10 cm offset from aruco marker to UGV centre
+        arucoPose.pose.position.y = data.pose.position.y + 0.10*math.sin(aruco_yaw) # y position account for 10 cm offset from aruco marker to UGV centre
         arucoPose.pose.position.z = 0.0 # z position does not matter
         arucoPose.pose.orientation.x = data.pose.orientation.x 
         arucoPose.pose.orientation.y = data.pose.orientation.y
