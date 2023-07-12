@@ -17,6 +17,7 @@ aruco_found = False          # variable to ensure the map merging parameters are
 def locate_callback_1(data):
     if (data != None): # and flag == True):
         global arucoPose
+        global aruco_yaw
         global aruco_found
 
         # populate PoseStamped object with the data received
@@ -57,20 +58,17 @@ def turtle_tf_broadcaster():
             rospy.set_param('/robot_2/map_merge/init_pose_x', arucoPose.pose.position.x)
             rospy.set_param('/robot_2/map_merge/init_pose_y', arucoPose.pose.position.y)
             rospy.set_param('/robot_2/map_merge/init_pose_z', arucoPose.pose.position.z)
-            (roll, pitch, yaw) = euler_from_quaternion([norm_quat.x, norm_quat.y,norm_quat.z, norm_quat.w]) # convert quaternion to RPY
-            rospy.set_param('/robot_2/map_merge/init_pose_yaw' , yaw)
-            rospy.loginfo("PARAMS SET: " + str(arucoPose.pose.position.x) + " " + str(arucoPose.pose.position.y) + " " + str(arucoPose.pose.position.z) + " " + str(yaw))
+            rospy.set_param('/robot_2/map_merge/init_pose_yaw' , 0.0) #aruco_yaw)   Set yaw to zero always, as with simulation. Taken care of already 
+            rospy.loginfo("PARAMS SET robot 2: x:" + str(arucoPose.pose.position.x) + "  y:" + str(arucoPose.pose.position.y) + "  z:" + str(arucoPose.pose.position.z) + "  yaw: 0.0")
             do_once = False
 
         # publish transform from map to robot_2/map
         br.sendTransform((arucoPose.pose.position.x, arucoPose.pose.position.y, 0.0),
                          (norm_quat.x, norm_quat.y, norm_quat.z, norm_quat.w),
                          rospy.Time.now(),
-                         "robot_2/map",
-                         "map")
+                         "robot_2/odom",
+                         "robot_2_noor/odom")
         rate.sleep()
-
-
 
 
 if __name__ == '__main__':
