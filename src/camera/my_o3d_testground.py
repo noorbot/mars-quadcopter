@@ -4,6 +4,7 @@ import open3d as o3d
 import open3d_conversions
 from sensor_msgs.msg import PointCloud2
 import time
+import numpy as np
 
 rospy.init_node('my_plane_segmentation')
 
@@ -33,30 +34,41 @@ while not rospy.is_shutdown():
     # VOXEL DOWNSAMPLING (FOR SPEED)
     o3d_cloud = o3d_cloud.voxel_down_sample(voxel_size=0.01)
 
+    points = np.asarray(o3d_cloud.points)  # points are in the camera_depth_optical_frame
+    #print(points) 
+
+    # transform points array to be global - apply transform from map to camera_depth_optical_frame
+    T = np.array([(1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1)])
+    cloud_global = o3d_cloud.transform(T)
+    points_global = np.asarray(cloud_global)
+    print(points_global)
+
+    # o3d_cloud = o3d_cloud.select_by_index(np.where(points[:, 1] > 0)[0])
+
 
     #print("Radius oulier removal")
     #cl, ind = o3d_cloud.remove_radius_outlier(nb_points=16, radius=0.02)
     # display_inlier_outlier(voxel_down_pcd, ind)
 
     # PLANE SEGMENTATION - SEE TIME THIS TAKES
-    start2 = time.process_time()
-    plane_model, inliers = o3d_cloud.segment_plane(distance_threshold=0.03,
-                                             ransac_n=3,
-                                             num_iterations=100)
-    [a, b, c, d] = plane_model
-    #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
-    #print("Displaying pointcloud with planar points in red ...")
-    inlier_cloud = o3d_cloud.select_by_index(inliers)
-    inlier_cloud.paint_uniform_color([1.0, 0, 0])
-    outlier_cloud = o3d_cloud.select_by_index(inliers, invert=True)
-    # o3d.visualization.draw([inlier_cloud, outlier_cloud])
-    print("TIME perform plane segmentation: ")
-    print(time.process_time() - start2)
+    # start2 = time.process_time()
+    # plane_model, inliers = o3d_cloud.segment_plane(distance_threshold=0.03,
+    #                                          ransac_n=3,
+    #                                          num_iterations=100)
+    # [a, b, c, d] = plane_model
+    # #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    # #print("Displaying pointcloud with planar points in red ...")
+    # inlier_cloud = o3d_cloud.select_by_index(inliers)
+    # inlier_cloud.paint_uniform_color([1.0, 0, 0])
+    # outlier_cloud = o3d_cloud.select_by_index(inliers, invert=True)
+    # # o3d.visualization.draw([inlier_cloud, outlier_cloud])
+    # print("TIME perform plane segmentation: ")
+    # print(time.process_time() - start2)
 
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMINF)
     start3 = time.process_time()
-    ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-    ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+    ros_inlier_cloud = open3d_conversions.to_msg(o3d_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+    ros_outlier_cloud = open3d_conversions.to_msg(cloud_global, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
     print("TIME convert back to msg: ")
     print(time.process_time() - start3)
     print("-------------------------")

@@ -2,7 +2,7 @@ import open3d as o3d
 
 if __name__ == "__main__":
 
-    pcd = o3d.io.read_point_cloud("src/camera/pics/obst_120.ply")
+    pcd = o3d.io.read_point_cloud("camera/pics/ttb.ply")
     plane_model, inliers = pcd.segment_plane(distance_threshold=0.03,
                                              ransac_n=3,
                                              num_iterations=1000)
