@@ -44,8 +44,8 @@ while not rospy.is_shutdown():
                                              ransac_n=3,
                                              num_iterations=100)
     [a, b, c, d] = plane_model
-    #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
-    #print("Displaying pointcloud with planar points in red ...")
+    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    print("Displaying pointcloud with planar points in red ...")
     inlier_cloud = o3d_cloud.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = o3d_cloud.select_by_index(inliers, invert=True)
