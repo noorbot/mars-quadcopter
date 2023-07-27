@@ -9,6 +9,7 @@ import tf
 #import ros_numpy
 from scipy.spatial.transform import Rotation as R
 import copy
+import pandas as pd
 
 rospy.init_node('my_plane_segmentation')
 
@@ -30,12 +31,13 @@ def handle_pointcloud(pointcloud2_msg):
 
 rate = rospy.Rate(1)
 
-listener = rospy.Subscriber('/camera/depth/color/points', PointCloud2, handle_pointcloud, queue_size=1)
+listener_pcd = rospy.Subscriber('/camera/depth/color/points', PointCloud2, handle_pointcloud, queue_size=1)
 publisher1 = rospy.Publisher('inlier_cloud', PointCloud2, queue_size=1)
 publisher2 = rospy.Publisher('outlier_cloud', PointCloud2, queue_size=1)
 
 # create the TransformListener object
-tf_listener = tf.TransformListener()
+tf_listener_cam = tf.TransformListener()
+tf_listener_ttb1 = tf.TransformListener()
 
 
 while not rospy.is_shutdown():
@@ -44,7 +46,13 @@ while not rospy.is_shutdown():
 
     try:
         # lookup transform between map and camera_depth_optical_frame
-        (trans,rot) = tf_listener.lookupTransform('/map', '/camera_depth_optical_frame', rospy.Time(0))
+        (trans,rot) = tf_listener_cam.lookupTransform('/map', '/camera_depth_optical_frame', rospy.Time(0))
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        continue
+
+    try:
+        # lookup transform between map and robot_1/base_footprint
+        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         continue
 
@@ -52,29 +60,19 @@ while not rospy.is_shutdown():
     # CONVERT POINTCLOUD MSG TO O3D DATATYPE
     o3d_cloud = open3d_conversions.from_msg(current_cloud)
 
-    # tested idea of converting the Pointcloud2 msg to points array - same result as o3d array
-    # points_OG = ros_numpy.point_cloud2.pointcloud2_to_xyz_array(current_cloud)   
-    # print("points OG")
-    # print(points_OG)
-
 
     # VOXEL DOWNSAMPLING (FOR SPEED)
     o3d_cloud = o3d_cloud.voxel_down_sample(voxel_size=0.01)
 
     points = np.asarray(o3d_cloud.points)  # points are in the camera_depth_optical_frame
 
-    # transform points array to be global - apply transform from map to camera_depth_optical_frame
+    # transform cloud to be global - apply transform from map to camera_depth_optical_frame
     T = convert_to_transfromation_matrix(trans, rot)  # convert the transform to a transformation matrix
-    cloud_global = o3d_cloud.transform(T)
+    cloud_global = copy.deepcopy(o3d_cloud).transform(T)
     points_global = np.asarray(cloud_global.points)
-    print("points global")
-    print(points)
 
-    cloud_global = cloud_global.select_by_index(np.where(points[:, 2] < 0.2)[0]) # only consider points that are under 20 cm in z (below ttb lidar)
-
-
-    # transform cloud back for visualization purposes
-    cloud_vis = copy.deepcopy(cloud_global).transform(np.linalg.inv(T))
+    # ONLY CONSIDER POINTS THAT ARE UNDER 20 CM IN Z (BELOW TTB LIDAR)
+    cloud_global = cloud_global.select_by_index(np.where(points_global[:, 2] < 0.2)[0])
 
     # convert pointcloud back to msg type
     #ros_cloud1 = open3d_conversions.to_msg(cloud_global, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
@@ -84,41 +82,51 @@ while not rospy.is_shutdown():
     #publisher1.publish(ros_cloud1)
     # publisher2.publish(ros_cloud2)
 
+    # ignore points around ttb location (20cm radius)
+    # lets say we have a ttb at ttb_x, ttb_y
+    points_df = pd.DataFrame(points_global)
+    ttb_x = trans_ttb1[0]
+    ttb_y = trans_ttb1[1]
+    print(ttb_x, ttb_y)
+    center = np.array([ttb_x, ttb_y, 0])
+    radius = 0.2
+    distances = np.linalg.norm(points_global - center, axis=1)
+    cloud_global.points = o3d.utility.Vector3dVector(points_global[distances >= radius])
+    #ttb_cloud_test = o3d.geometry.PointCloud()
+    # ttb_cloud_test.points = o3d.utility.Vector3dVector(points_global[distances <= radius])
+    # print(ttb_cloud_test.points)
 
+    # points_df_ttb = points_df[(points_df.iloc[:,0]>(ttb_x-0.2)) & (points_df.iloc[:,0]<(ttb_x+0.2)) & (points_df.iloc[:,1]>(ttb_y-0.2)) & (points_df.iloc[:,1]<(ttb_y+0.2))]
+    # points_ttb = points_df_ttb.to_numpy()
+    # new_test_cloud = o3d.geometry.PointCloud()
+    # new_test_cloud.points = o3d.utility.Vector3dVector(points_ttb)
+    #cloud_global = cloud_global.select_by_index(points_df_ttb.index, invert=True)
+
+    # transform cloud back for visualization purposes
+    cloud_vis = copy.deepcopy(cloud_global).transform(np.linalg.inv(T))
 
     # PLANE SEGMENTATION
 
-    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.03,
+    plane_model, inliers = cloud_vis.segment_plane(distance_threshold=0.03,
                                              ransac_n=3,
                                              num_iterations=100)
     [a, b, c, d] = plane_model
     #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
     #print("Displaying pointcloud with planar points in red ...")
-    inlier_cloud = cloud_global.select_by_index(inliers)
+    inlier_cloud = cloud_vis.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
-    outlier_cloud = cloud_global.select_by_index(inliers, invert=True)
+    outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
     # o3d.visualization.draw([inlier_cloud, outlier_cloud])
 
 
     obstacle_cloud = copy.deepcopy(outlier_cloud)
 
-    # # ignore points around ttb location (20cm radius)
-    # # lets say we have a ttb at ttb_x, ttb_y
-    # ttb_x = 1
-    # ttb_y = 1
-    # ttb_points = points_global
-    # np.delete(ttb_points, np.all((ttb_x-0.2) < ttb_points[0] and ttb_points < (ttb_x+0.2) and (ttb_y-0.2) < ttb_points[1] and ttb_points[1] < (ttb_y+0.2)))
-    # cloud_global = cloud_global.select_by_index(ttb_points[0])
-    # # for row in ttb_points:
-    # #     distance = np.sqrt(np.square(row[0] - ttb_x) + (row[1] - ttb_y))
-    # #     if distance < 0.2:
-    # #         ttb_points = np.delete(ttb_points, row)
-    # # calculate distance from point (x y) to (ttbx, y). if its <0.2m then remove this point
+
 
     obstacle_cloud = cloud_global
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
     ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-    ros_outlier_cloud = open3d_conversions.to_msg(obstacle_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+    ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
     
  
     publisher1.publish(ros_inlier_cloud)
@@ -126,4 +134,6 @@ while not rospy.is_shutdown():
 
     print("-------------------------")
     current_cloud = None
+    cloud_global = None
+    points_df_ttb = None
     rate.sleep()
