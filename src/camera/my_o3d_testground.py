@@ -74,39 +74,21 @@ while not rospy.is_shutdown():
     # ONLY CONSIDER POINTS THAT ARE UNDER 20 CM IN Z (BELOW TTB LIDAR)
     cloud_global = cloud_global.select_by_index(np.where(points_global[:, 2] < 0.2)[0])
 
-    # convert pointcloud back to msg type
-    #ros_cloud1 = open3d_conversions.to_msg(cloud_global, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-    # ros_cloud2 = open3d_conversions.to_msg(cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-
-    # publish processed pointcloud(s)
-    #publisher1.publish(ros_cloud1)
-    # publisher2.publish(ros_cloud2)
-
     # ignore points around ttb location (20cm radius)
     # lets say we have a ttb at ttb_x, ttb_y
     points_df = pd.DataFrame(points_global)
     ttb_x = trans_ttb1[0]
     ttb_y = trans_ttb1[1]
     print(ttb_x, ttb_y)
-    center = np.array([ttb_x, ttb_y, 0])
-    radius = 0.2
+    center = np.array([ttb_x, ttb_y, 0.1])
+    radius = 0.25
     distances = np.linalg.norm(points_global - center, axis=1)
-    cloud_global.points = o3d.utility.Vector3dVector(points_global[distances >= radius])
-    #ttb_cloud_test = o3d.geometry.PointCloud()
-    # ttb_cloud_test.points = o3d.utility.Vector3dVector(points_global[distances <= radius])
-    # print(ttb_cloud_test.points)
-
-    # points_df_ttb = points_df[(points_df.iloc[:,0]>(ttb_x-0.2)) & (points_df.iloc[:,0]<(ttb_x+0.2)) & (points_df.iloc[:,1]>(ttb_y-0.2)) & (points_df.iloc[:,1]<(ttb_y+0.2))]
-    # points_ttb = points_df_ttb.to_numpy()
-    # new_test_cloud = o3d.geometry.PointCloud()
-    # new_test_cloud.points = o3d.utility.Vector3dVector(points_ttb)
-    #cloud_global = cloud_global.select_by_index(points_df_ttb.index, invert=True)
+    cloud_global.points = o3d.utility.Vector3dVector(points_global[distances >= radius]) # ahjkh this line is causing issues.... can't display this pcd
 
     # transform cloud back for visualization purposes
     cloud_vis = copy.deepcopy(cloud_global).transform(np.linalg.inv(T))
 
     # PLANE SEGMENTATION
-
     plane_model, inliers = cloud_vis.segment_plane(distance_threshold=0.03,
                                              ransac_n=3,
                                              num_iterations=100)
@@ -116,14 +98,8 @@ while not rospy.is_shutdown():
     inlier_cloud = cloud_vis.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
-    # o3d.visualization.draw([inlier_cloud, outlier_cloud])
 
 
-    obstacle_cloud = copy.deepcopy(outlier_cloud)
-
-
-
-    obstacle_cloud = cloud_global
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
     ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
     ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
