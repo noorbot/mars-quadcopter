@@ -16,13 +16,34 @@ rospy.init_node('my_plane_segmentation')
 current_cloud = None
 
 
-# my custom function to create the transformation matrix from /map to /camera_depth_optical_frame
+# my function to create the transformation matrix from /map to /camera_depth_optical_frame
 def convert_to_transfromation_matrix(trans, rot):
     r = R.from_quat(rot)        # convert quaternion to rotation matrix
     T = np.eye(4)               # initialize transformation matrix T
     T[0:3,0:3] = r.as_matrix()  # set rotation matrix elements
     T[0:3,3] = trans            # set translation vector elements
     return T
+
+# my function to ignore the pointcloud points in the location of the turtlebots
+def ignore_ttb_points(points_global):
+    # ignore points around ttb location (20cm radius)
+    # lets say we have a ttb at ttb_x, ttb_y
+    ttb1_x = trans_ttb1[0]
+    ttb1_y = trans_ttb1[1]
+    center1 = np.array([ttb1_x, ttb1_y, 0.1])
+    radius1 = 0.25
+    distances1 = np.linalg.norm(points_global - center1, axis=1)
+    points_global = points_global[distances1 >= radius1]
+    cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
+
+    ttb2_x = trans_ttb2[0]
+    ttb2_y = trans_ttb2[1]
+    center2 = np.array([ttb2_x, ttb2_y, 0.1])
+    radius2 = 0.25
+    distances2 = np.linalg.norm(points_global - center2, axis=1)
+    points_global = points_global[distances2 >= radius2]
+    cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
+
 
 # CALLBACK FUNCTION TO READ POINTCLOUD DATA FROM SUBSCRIPTION
 def handle_pointcloud(pointcloud2_msg):
@@ -38,6 +59,7 @@ publisher2 = rospy.Publisher('outlier_cloud', PointCloud2, queue_size=1)
 # create the TransformListener object
 tf_listener_cam = tf.TransformListener()
 tf_listener_ttb1 = tf.TransformListener()
+tf_listener_ttb2 = tf.TransformListener()
 
 
 while not rospy.is_shutdown():
@@ -53,6 +75,12 @@ while not rospy.is_shutdown():
     try:
         # lookup transform between map and robot_1/base_footprint
         (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        continue
+
+    try:
+        # lookup transform between map and robot_1/base_footprint
+        (trans_ttb2,rot_ttb2) = tf_listener_ttb1.lookupTransform('/map', '/robot_2/base_footprint', rospy.Time(0))
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         continue
 
@@ -74,16 +102,8 @@ while not rospy.is_shutdown():
     # ONLY CONSIDER POINTS THAT ARE UNDER 20 CM IN Z (BELOW TTB LIDAR)
     cloud_global = cloud_global.select_by_index(np.where(points_global[:, 2] < 0.2)[0])
 
-    # ignore points around ttb location (20cm radius)
-    # lets say we have a ttb at ttb_x, ttb_y
-    points_df = pd.DataFrame(points_global)
-    ttb_x = trans_ttb1[0]
-    ttb_y = trans_ttb1[1]
-    print(ttb_x, ttb_y)
-    center = np.array([ttb_x, ttb_y, 0.1])
-    radius = 0.25
-    distances = np.linalg.norm(points_global - center, axis=1)
-    cloud_global.points = o3d.utility.Vector3dVector(points_global[distances >= radius]) # ahjkh this line is causing issues.... can't display this pcd
+    # CALL FUNCTION TO REMOVE TTB POINTS
+    ignore_ttb_points(points_global)
 
     # transform cloud back for visualization purposes
     cloud_vis = copy.deepcopy(cloud_global).transform(np.linalg.inv(T))
