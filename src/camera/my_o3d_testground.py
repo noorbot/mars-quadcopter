@@ -76,13 +76,18 @@ while not rospy.is_shutdown():
         # lookup transform between map and robot_1/base_footprint
         (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        continue
+        print("No tf data for robot_1. Set to x=100 y=0 for point removal(out of the way)")
+        (trans_ttb1,rot_ttb1) = ([100.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
+        pass
 
     try:
         # lookup transform between map and robot_1/base_footprint
         (trans_ttb2,rot_ttb2) = tf_listener_ttb1.lookupTransform('/map', '/robot_2/base_footprint', rospy.Time(0))
+        print(trans_ttb2, rot_ttb2)
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-        continue
+        print("No tf data for robot_2. Set to x=100 y=0 for point removal (out of the way)")
+        (trans_ttb2,rot_ttb2) = ([100.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
+        pass
 
 
     # CONVERT POINTCLOUD MSG TO O3D DATATYPE
