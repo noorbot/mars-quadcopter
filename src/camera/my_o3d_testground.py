@@ -10,6 +10,10 @@ import tf
 from scipy.spatial.transform import Rotation as R
 import copy
 import pandas as pd
+import matplotlib.pyplot as plt
+import sys
+np.set_printoptions(threshold=sys.maxsize)
+
 
 rospy.init_node('my_plane_segmentation')
 
@@ -83,7 +87,6 @@ while not rospy.is_shutdown():
     try:
         # lookup transform between map and robot_1/base_footprint
         (trans_ttb2,rot_ttb2) = tf_listener_ttb1.lookupTransform('/map', '/robot_2/base_footprint', rospy.Time(0))
-        print(trans_ttb2, rot_ttb2)
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         print("No tf data for robot_2. Set to x=100 y=0 for point removal (out of the way)")
         (trans_ttb2,rot_ttb2) = ([100.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
@@ -118,11 +121,65 @@ while not rospy.is_shutdown():
                                              ransac_n=3,
                                              num_iterations=100)
     [a, b, c, d] = plane_model
-    #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
     #print("Displaying pointcloud with planar points in red ...")
     inlier_cloud = cloud_vis.select_by_index(inliers)
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
+
+    # REMOVE TINY CLUMPS
+    # 1 find all clumps
+        # a for each point - find neighbours with RKNN
+        # b take these points off list
+    # 2 remove those that are made up of fewer than 100 points (for example)
+    
+    # REMOVE ENCOLSED SHALLOW POINTS
+    outlier_points = np.asarray(outlier_cloud.points)
+    # print('outlier shape: ')
+    # print(outlier_points.shape)
+    # print(outlier_points)
+    #inlier_volume = 
+
+    # DBSAN CLUSTERING
+    with o3d.utility.VerbosityContextManager(
+        o3d.utility.VerbosityLevel.Debug) as cm:
+        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=True))
+    max_label = labels.max()
+    print(f"point cloud has {max_label + 1} clusters")
+    colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+    colors[labels < 0] = 0
+    outlier_cloud.colors = o3d.utility.Vector3dVector(colors[:, :3])
+
+    # create pandas Dataframe with all outlier_cloud points including their DBSCAN clustering labels
+    outlier_cloud_labels = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
+    outlier_cloud_labels['label'] = labels
+    print(outlier_cloud_labels)
+    # remove all points with label -1 (noise)
+    index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
+    points_to_remove = index_1.index.to_list()
+
+    print('points to remove length: ' + str(len(points_to_remove)))
+
+    # remove points with fewer than 50 members in the label
+    for label in range(max_label):
+        curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==label]
+        # print('label ' + str(label) + ' has length of ' + str(len(curr_label)))
+        # print('label: ' + str(label) + " max z: " + str(curr_label['z'].max()-trans[2]))
+
+        if(len(curr_label) < 50): #or (curr_label['z'].max()-trans[2] > 0.025): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with a max z height lower than 2.5cm from the ground
+            points_to_remove.extend(curr_label.index.to_list())
+
+    print('points to remove length: ' + str(len(points_to_remove)))
+    # remove points from outlier cloud
+    outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+
+
+
+    # for label in range(-1, max_label):
+    #     curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==label]
+    #     points_to_remove.append(curr_label.index)
+    #     print(points_to_remove)
+
 
 
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)

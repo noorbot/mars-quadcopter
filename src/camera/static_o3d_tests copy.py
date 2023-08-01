@@ -4,6 +4,7 @@ import open3d as o3d
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def convert_to_transfromation_matrix(trans, rot):
     r = R.from_rotvec(rot)        # convert RPY to rotation matrix
@@ -52,7 +53,20 @@ if __name__ == "__main__":
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = pcd_sel.select_by_index(inliers, invert=True)
 
+    with o3d.utility.VerbosityContextManager(
+        o3d.utility.VerbosityLevel.Debug) as cm:
+        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.02, min_points=10, print_progress=True))
 
+    max_label = labels.max()
+    print(f"point cloud has {max_label + 1} clusters")
+    colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+    colors[labels < 0] = 0
+    outlier_cloud.colors = o3d.utility.Vector3dVector(colors[:, :3])
+    o3d.visualization.draw_geometries([pcd],
+                                    zoom=0.455,
+                                    front=[-0.4999, -0.1659, -0.8499],
+                                    lookat=[2.1813, 2.0619, 2.0999],
+                                    up=[0.1204, -0.9852, 0.1215])
 
 
 
