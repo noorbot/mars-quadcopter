@@ -127,23 +127,11 @@ while not rospy.is_shutdown():
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
 
-    # REMOVE TINY CLUMPS
-    # 1 find all clumps
-        # a for each point - find neighbours with RKNN
-        # b take these points off list
-    # 2 remove those that are made up of fewer than 100 points (for example)
-    
-    # REMOVE ENCOLSED SHALLOW POINTS
-    outlier_points = np.asarray(outlier_cloud.points)
-    # print('outlier shape: ')
-    # print(outlier_points.shape)
-    # print(outlier_points)
-    #inlier_volume = 
 
     # DBSAN CLUSTERING
     with o3d.utility.VerbosityContextManager(
         o3d.utility.VerbosityLevel.Debug) as cm:
-        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=True))
+        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
     max_label = labels.max()
     print(f"point cloud has {max_label + 1} clusters")
     colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
@@ -153,32 +141,18 @@ while not rospy.is_shutdown():
     # create pandas Dataframe with all outlier_cloud points including their DBSCAN clustering labels
     outlier_cloud_labels = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
     outlier_cloud_labels['label'] = labels
-    print(outlier_cloud_labels)
     # remove all points with label -1 (noise)
     index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
     points_to_remove = index_1.index.to_list()
-
-    print('points to remove length: ' + str(len(points_to_remove)))
-
-    # remove points with fewer than 50 members in the label
-    for label in range(max_label):
-        curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==label]
-        # print('label ' + str(label) + ' has length of ' + str(len(curr_label)))
-        # print('label: ' + str(label) + " max z: " + str(curr_label['z'].max()-trans[2]))
-
-        if(len(curr_label) < 50): #or (curr_label['z'].max()-trans[2] > 0.025): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with a max z height lower than 2.5cm from the ground
+    # remove points with fewer than 50 members in the cluster, or only have members withing the 'sandwich'
+    for cluster in range(max_label):
+        curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
+        if(len(curr_label) < 50) or (abs(curr_label['z'].min()-trans[2]) < 0.03): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with a max z height lower than 2.5cm from the ground. using visualization frame data rather than global points so need to subtract trans[2] for z
             points_to_remove.extend(curr_label.index.to_list())
 
     print('points to remove length: ' + str(len(points_to_remove)))
     # remove points from outlier cloud
     outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
-
-
-
-    # for label in range(-1, max_label):
-    #     curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==label]
-    #     points_to_remove.append(curr_label.index)
-    #     print(points_to_remove)
 
 
 
