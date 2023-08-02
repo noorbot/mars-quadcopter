@@ -48,6 +48,34 @@ def ignore_ttb_points(points_global):
     points_global = points_global[distances2 >= radius2]
     cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
 
+def clean_pointcloud(outlier_cloud):
+    # DBSAN CLUSTERING
+    with o3d.utility.VerbosityContextManager(
+        o3d.utility.VerbosityLevel.Debug) as cm:
+        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
+    if len(np.unique(labels)) > 1:  # if robot is on floor the camera will detect zero clusters and the below code should not be executed
+        max_label = labels.max()
+        print(f"point cloud has {max_label + 1} clusters")
+        colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+        colors[labels < 0] = 0
+        outlier_cloud.colors = o3d.utility.Vector3dVector(colors[:, :3])
+
+        # create pandas Dataframe with all outlier_cloud points including their DBSCAN clustering labels
+        outlier_cloud_labels = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
+        outlier_cloud_labels['label'] = labels
+        # remove all points with label -1 (noise)
+        index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
+        points_to_remove = index_1.index.to_list()
+        # remove points with fewer than 50 members in the cluster, or only have members within the 'sandwich'
+        for cluster in range(max_label):
+            curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
+            if(len(curr_label) < 100) or not((abs(curr_label['z'].min()-trans[2]) > 0.05) or (abs(curr_label['z'].max()-trans[2]) > 0.05)): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with extreme z heights lower than 3cm from the ground. using visualization frame data rather than global points so need to subtract trans[2] for z
+                points_to_remove.extend(curr_label.index.to_list())
+
+        print('points to remove length: ' + str(len(points_to_remove)))
+        # remove points from outlier cloud
+        outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+        return outlier_cloud
 
 # CALLBACK FUNCTION TO READ POINTCLOUD DATA FROM SUBSCRIPTION
 def handle_pointcloud(pointcloud2_msg):
@@ -127,33 +155,8 @@ while not rospy.is_shutdown():
     inlier_cloud.paint_uniform_color([1.0, 0, 0])
     outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
 
-
-    # DBSAN CLUSTERING
-    with o3d.utility.VerbosityContextManager(
-        o3d.utility.VerbosityLevel.Debug) as cm:
-        labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
-    max_label = labels.max()
-    print(f"point cloud has {max_label + 1} clusters")
-    colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
-    colors[labels < 0] = 0
-    outlier_cloud.colors = o3d.utility.Vector3dVector(colors[:, :3])
-
-    # create pandas Dataframe with all outlier_cloud points including their DBSCAN clustering labels
-    outlier_cloud_labels = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
-    outlier_cloud_labels['label'] = labels
-    # remove all points with label -1 (noise)
-    index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
-    points_to_remove = index_1.index.to_list()
-    # remove points with fewer than 50 members in the cluster, or only have members withing the 'sandwich'
-    for cluster in range(max_label):
-        curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
-        if(len(curr_label) < 50) or (abs(curr_label['z'].min()-trans[2]) < 0.03): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with a max z height lower than 2.5cm from the ground. using visualization frame data rather than global points so need to subtract trans[2] for z
-            points_to_remove.extend(curr_label.index.to_list())
-
-    print('points to remove length: ' + str(len(points_to_remove)))
-    # remove points from outlier cloud
-    outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
-
+    # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD
+    outlier_cloud = clean_pointcloud(outlier_cloud)
 
 
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
