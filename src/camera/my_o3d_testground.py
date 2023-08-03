@@ -49,6 +49,31 @@ def ignore_ttb_points(points_global):
 
     return cloud_global
 
+# my function to ignore the pointcloud points in the location of the turtlebots
+def ignore_ttb_points_take2(outlier_cloud, outlier_cloud_labels):
+    # ignore points around ttb location (20cm radius)
+    # lets say we have a ttb at ttb_x, ttb_y
+    ttb1_x = trans_ttb1[0]
+    ttb1_y = trans_ttb1[1]
+    center1 = np.array([ttb1_x, ttb1_y, 0.])
+    pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)
+    [k, idx, _] = pcd_tree.search_knn_vector_3d(center1, 1)
+    print("idx idk")
+    print(idx[0])
+    # now we need to find which cluster in outlier_cloud_labels has the index idx[0]
+    print(outlier_cloud_labels.iloc[idx])
+    ttb_cluster_label = outlier_cloud_labels.iloc[idx]['label']
+    print(ttb_cluster_label)
+    ttb_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb_cluster_label]
+    points_to_remove = ttb_cluster.index.to_list() # list to store the index of all points which are to be removed
+    outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+
+
+    #distances1 = np.linalg.norm(points_global - center1, axis=1)
+    #cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
+
+    return cloud_global
+
 # my function to clean up the obstacle cloud to leave only useful points
 def clean_pointcloud(outlier_cloud):
     # DBSAN CLUSTERING
@@ -67,7 +92,7 @@ def clean_pointcloud(outlier_cloud):
         outlier_cloud_labels['label'] = labels
         # remove all points with label -1 (noise)
         index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
-        points_to_remove = index_1.index.to_list()
+        points_to_remove = index_1.index.to_list() # list to store the index of all points which are to be removed
         # remove points with fewer than 50 members in the cluster, or only have members within the 'sandwich'
         for cluster in range(max_label):
             curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
@@ -77,7 +102,9 @@ def clean_pointcloud(outlier_cloud):
         print('points to remove length: ' + str(len(points_to_remove)))
         # remove points from outlier cloud
         outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
-        return outlier_cloud
+        outlier_cloud_labels = outlier_cloud_labels.drop(index=points_to_remove)
+
+        return outlier_cloud, outlier_cloud_labels
     
 def plane_segmentation(cloud_global):
     plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.03,
@@ -152,14 +179,15 @@ while not rospy.is_shutdown():
     points_global = points_global[points_global[:, 2] < 0.2]
     cloud_global = cloud_global.select_by_index(np.where(points_global)[0])
 
-    # CALL FUNCTION TO REMOVE TTB POINTS
-    cloud_global = ignore_ttb_points(points_global)
-
     # PLANE SEGMENTATION
     outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
 
     # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD
-    outlier_cloud = clean_pointcloud(outlier_cloud)
+    outlier_cloud, outlier_cloud_labels = clean_pointcloud(outlier_cloud)
+
+    # CALL FUNCTION TO REMOVE TTB POINTS
+    #cloud_global = ignore_ttb_points(points_global)
+    ignore_ttb_points_take2(outlier_cloud, outlier_cloud_labels)
 
     # transform clouds back for visualization purposes
     outlier_cloud_vis = copy.deepcopy(outlier_cloud).transform(np.linalg.inv(T))
