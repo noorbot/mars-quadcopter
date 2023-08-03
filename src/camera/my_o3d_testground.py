@@ -19,7 +19,6 @@ rospy.init_node('my_plane_segmentation')
 
 current_cloud = None
 
-
 # my function to create the transformation matrix from /map to /camera_depth_optical_frame
 def convert_to_transfromation_matrix(trans, rot):
     r = R.from_quat(rot)        # convert quaternion to rotation matrix
@@ -48,6 +47,9 @@ def ignore_ttb_points(points_global):
     points_global = points_global[distances2 >= radius2]
     cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
 
+    return cloud_global
+
+# my function to clean up the obstacle cloud to leave only useful points
 def clean_pointcloud(outlier_cloud):
     # DBSAN CLUSTERING
     with o3d.utility.VerbosityContextManager(
@@ -69,13 +71,25 @@ def clean_pointcloud(outlier_cloud):
         # remove points with fewer than 50 members in the cluster, or only have members within the 'sandwich'
         for cluster in range(max_label):
             curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
-            if(len(curr_label) < 100) or not((abs(curr_label['z'].min()-trans[2]) > 0.05) or (abs(curr_label['z'].max()-trans[2]) > 0.05)): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with extreme z heights lower than 3cm from the ground. using visualization frame data rather than global points so need to subtract trans[2] for z
+            if(len(curr_label) < 100) or not((abs(curr_label['z'].min()) > 0.05) or (abs(curr_label['z'].max()) > 0.05)): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with extreme z heights lower than 3cm from the ground.
                 points_to_remove.extend(curr_label.index.to_list())
 
         print('points to remove length: ' + str(len(points_to_remove)))
         # remove points from outlier cloud
         outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
         return outlier_cloud
+    
+def plane_segmentation(cloud_global):
+    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.03,
+                                             ransac_n=3,
+                                             num_iterations=100)
+    [a, b, c, d] = plane_model
+    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
+    #print("Displaying pointcloud with planar points in red ...")
+    inlier_cloud = cloud_global.select_by_index(inliers)
+    inlier_cloud.paint_uniform_color([1.0, 0, 0])
+    outlier_cloud = cloud_global.select_by_index(inliers, invert=True)
+    return outlier_cloud, inlier_cloud
 
 # CALLBACK FUNCTION TO READ POINTCLOUD DATA FROM SUBSCRIPTION
 def handle_pointcloud(pointcloud2_msg):
@@ -124,7 +138,6 @@ while not rospy.is_shutdown():
     # CONVERT POINTCLOUD MSG TO O3D DATATYPE
     o3d_cloud = open3d_conversions.from_msg(current_cloud)
 
-
     # VOXEL DOWNSAMPLING (FOR SPEED)
     o3d_cloud = o3d_cloud.voxel_down_sample(voxel_size=0.01)
 
@@ -136,39 +149,30 @@ while not rospy.is_shutdown():
     points_global = np.asarray(cloud_global.points)
 
     # ONLY CONSIDER POINTS THAT ARE UNDER 20 CM IN Z (BELOW TTB LIDAR)
-    cloud_global = cloud_global.select_by_index(np.where(points_global[:, 2] < 0.2)[0])
+    points_global = points_global[points_global[:, 2] < 0.2]
+    cloud_global = cloud_global.select_by_index(np.where(points_global)[0])
 
     # CALL FUNCTION TO REMOVE TTB POINTS
-    ignore_ttb_points(points_global)
-
-    # transform cloud back for visualization purposes
-    cloud_vis = copy.deepcopy(cloud_global).transform(np.linalg.inv(T))
+    cloud_global = ignore_ttb_points(points_global)
 
     # PLANE SEGMENTATION
-    plane_model, inliers = cloud_vis.segment_plane(distance_threshold=0.03,
-                                             ransac_n=3,
-                                             num_iterations=100)
-    [a, b, c, d] = plane_model
-    print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
-    #print("Displaying pointcloud with planar points in red ...")
-    inlier_cloud = cloud_vis.select_by_index(inliers)
-    inlier_cloud.paint_uniform_color([1.0, 0, 0])
-    outlier_cloud = cloud_vis.select_by_index(inliers, invert=True)
+    outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
 
     # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD
     outlier_cloud = clean_pointcloud(outlier_cloud)
 
+    # transform clouds back for visualization purposes
+    outlier_cloud_vis = copy.deepcopy(outlier_cloud).transform(np.linalg.inv(T))
+    inlier_cloud_vis = copy.deepcopy(inlier_cloud).transform(np.linalg.inv(T))
 
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
-    ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-    ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-    
+    ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+    ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+
  
     publisher1.publish(ros_inlier_cloud)
     publisher2.publish(ros_outlier_cloud)
 
     print("-------------------------")
     current_cloud = None
-    cloud_global = None
-    points_df_ttb = None
     rate.sleep()
