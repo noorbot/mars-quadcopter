@@ -51,28 +51,34 @@ def ignore_ttb_points(points_global):
 
 # my function to ignore the pointcloud points in the location of the turtlebots
 def ignore_ttb_points_take2(outlier_cloud, outlier_cloud_labels):
+    outlier_cloud_labels.reset_index(drop=True)
+    outlier_cloud_bitch = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
+    outlier_cloud_bitch.to_csv("outlier cloud og.csv")
+    outlier_cloud_labels.to_csv("outlier cloud labels.csv")
     # ignore points around ttb location (20cm radius)
     # lets say we have a ttb at ttb_x, ttb_y
-    ttb1_x = trans_ttb1[0]
-    ttb1_y = trans_ttb1[1]
-    center1 = np.array([ttb1_x, ttb1_y, 0.])
+    ttb1_x = 0.9244908701031699 #trans_ttb1[0] JUST FOR TESTING RN
+    ttb1_y = 1.051836375013784 #trans_ttb1[1]
+    center1 = np.array([ttb1_x, ttb1_y, 0.15])
+    print("ttb coords: ")
+    print(center1)
     pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)
     [k, idx, _] = pcd_tree.search_knn_vector_3d(center1, 1)
     print("idx idk")
-    print(idx[0])
+    print(idx)
     # now we need to find which cluster in outlier_cloud_labels has the index idx[0]
-    print(outlier_cloud_labels.iloc[idx])
-    ttb_cluster_label = outlier_cloud_labels.iloc[idx]['label']
+    print(outlier_cloud_labels.loc[idx]) #probem is this looks for the idx-th entry
+    ttb_cluster_label = outlier_cloud_labels.loc[idx]['label']
     print(ttb_cluster_label)
-    ttb_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb_cluster_label]
-    points_to_remove = ttb_cluster.index.to_list() # list to store the index of all points which are to be removed
-    outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+    #ttb_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb_cluster_label]
+    #points_to_remove = ttb_cluster.index.to_list() # list to store the index of all points which are to be removed
+    #outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
 
 
     #distances1 = np.linalg.norm(points_global - center1, axis=1)
     #cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
 
-    return cloud_global
+    return outlier_cloud
 
 # my function to clean up the obstacle cloud to leave only useful points
 def clean_pointcloud(outlier_cloud):
@@ -101,8 +107,38 @@ def clean_pointcloud(outlier_cloud):
 
         print('points to remove length: ' + str(len(points_to_remove)))
         # remove points from outlier cloud
+        #outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+        #outlier_cloud_labels = outlier_cloud_labels.drop(index=points_to_remove)
+        print(outlier_cloud_labels)
+
+        # REMOVE TTB POINTS ADDED HERERERERE:
+
+        # ignore points around ttb location (20cm radius)
+        # lets say we have a ttb at ttb_x, ttb_y
+        ttb1_x = 0.92 #trans_ttb1[0] JUST FOR TESTING RN
+        ttb1_y = 1.05 #trans_ttb1[1]
+        center1 = np.array([ttb1_x, ttb1_y, 0.15])
+        print("ttb coords: ")
+        print(center1)
+        pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)
+        [k, idx, _] = pcd_tree.search_knn_vector_3d(center1, 1)
+        print("idx idk")
+        print(idx)
+        # now we need to find which cluster in outlier_cloud_labels has the index idx[0]
+        print(outlier_cloud_labels.loc[idx]) #probem is this looks for the idx-th entry
+        ttb_cluster_label = outlier_cloud_labels.at[idx[0], 'label']
+        print(type(ttb_cluster_label))
+        #ttb_cluster_label = ttb_cluster_label[0]
+        print(ttb_cluster_label)
+        # okay now we want to select all points with that label
+        ttb_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb_cluster_label]
+        points_to_remove.extend(ttb_cluster.index.to_list()) # list to store the index of all points which are to be removed
         outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
-        outlier_cloud_labels = outlier_cloud_labels.drop(index=points_to_remove)
+
+
+        #distances1 = np.linalg.norm(points_global - center1, axis=1)
+        #cloud_global.points = o3d.utility.Vector3dVector(points_global) # ahjkh this line is causing issues.... can't display this pcd
+
 
         return outlier_cloud, outlier_cloud_labels
     
@@ -145,9 +181,10 @@ while not rospy.is_shutdown():
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         continue
 
-    try:
+    try: #HELLO I CHANGED THIS TO FIDUCIAL 3 JUST FOR TESTING!!!!
         # lookup transform between map and robot_1/base_footprint
-        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
+        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
+        print(trans_ttb1)
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         print("No tf data for robot_1. Set to x=100 y=0 for point removal(out of the way)")
         (trans_ttb1,rot_ttb1) = ([100.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0])
@@ -177,17 +214,23 @@ while not rospy.is_shutdown():
 
     # ONLY CONSIDER POINTS THAT ARE UNDER 20 CM IN Z (BELOW TTB LIDAR)
     points_global = points_global[points_global[:, 2] < 0.2]
+    print(cloud_global.points)
     cloud_global = cloud_global.select_by_index(np.where(points_global)[0])
+    #cloud_global.points = o3d.utility.Vector3dVector(points_global)
+    print(cloud_global.points)
 
+
+    
     # PLANE SEGMENTATION
     outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
+
 
     # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD
     outlier_cloud, outlier_cloud_labels = clean_pointcloud(outlier_cloud)
 
     # CALL FUNCTION TO REMOVE TTB POINTS
     #cloud_global = ignore_ttb_points(points_global)
-    ignore_ttb_points_take2(outlier_cloud, outlier_cloud_labels)
+    #outlier_cloud = ignore_ttb_points_take2(outlier_cloud, outlier_cloud_labels)
 
     # transform clouds back for visualization purposes
     outlier_cloud_vis = copy.deepcopy(outlier_cloud).transform(np.linalg.inv(T))
