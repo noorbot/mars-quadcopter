@@ -54,6 +54,8 @@ def ignore_ttb_points(points_global):
 def clean_pointcloud_and_ttbs(outlier_cloud):
     # DBSAN CLUSTERING
 
+    points_to_remove = []
+
     labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
     if len(np.unique(labels)) > 1:  # if robot is on floor the camera will detect zero clusters and the below code should not be executed
         max_label = labels.max()
@@ -143,7 +145,7 @@ while not rospy.is_shutdown():
 
     try: #HELLO I CHANGED THIS TO FIDUCIAL 3 JUST FOR TESTING!!!!
         # lookup transform between map and robot_1/base_footprint
-        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
+        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         print("No tf data for robot_1. Set to z=100 for point removal(out of the way)")
         (trans_ttb1,rot_ttb1) = ([0.0, 0.0, 100.0], [0.0, 0.0, 0.0, 1.0])
