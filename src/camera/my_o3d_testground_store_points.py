@@ -18,6 +18,7 @@ np.set_printoptions(threshold=sys.maxsize)
 rospy.init_node('my_plane_segmentation')
 
 current_cloud = None
+outlier_cloud_store = o3d.geometry.PointCloud()
 
 # my function to create the transformation matrix from /map to /camera_depth_optical_frame
 def convert_to_transfromation_matrix(trans, rot):
@@ -178,17 +179,21 @@ while not rospy.is_shutdown():
     
     # PLANE SEGMENTATION
     outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
+    print(len(outlier_cloud.points))
 
     # CHECK THAT WE HAVE AN OUTLIER_CLOUD FROM PLANE SEGMENTATION
     if(len(outlier_cloud.points)>100):
         # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD and REMOVE TTB POINTS
         outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
 
+        # HERE I WANT TO ADD THE outlier_cloud_vis points TO BE STORED IN outlier_cloud_store
+        current_outlier_points = np.asarray(outlier_cloud.points)
+        outlier_cloud_store.points.extend(current_outlier_points)
+        outlier_cloud_store = outlier_cloud_store.voxel_down_sample(voxel_size=0.01)
+
         # transform clouds back for visualization purposes
-        outlier_cloud_vis = copy.deepcopy(outlier_cloud)
-        outlier_cloud_vis.transform(np.linalg.inv(T))
-        inlier_cloud_vis = copy.deepcopy(inlier_cloud)
-        inlier_cloud_vis.transform(np.linalg.inv(T))
+        outlier_cloud_vis = copy.deepcopy(outlier_cloud_store).transform(np.linalg.inv(T))
+        inlier_cloud_vis = copy.deepcopy(inlier_cloud).transform(np.linalg.inv(T))
 
         # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
         ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
