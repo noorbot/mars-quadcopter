@@ -187,17 +187,21 @@ while not rospy.is_shutdown():
         outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
 
         # HERE I WANT TO ADD THE outlier_cloud_vis points TO BE STORED IN outlier_cloud_store
-        current_outlier_points = np.asarray(outlier_cloud.points)
-        outlier_cloud_store.points.extend(current_outlier_points)
-        outlier_cloud_store = outlier_cloud_store.voxel_down_sample(voxel_size=0.01)
+        #current_outlier_points = np.asarray(outlier_cloud.points)
+        #outlier_cloud_store.points.extend(current_outlier_points)      REMOVE 
+        #outlier_cloud_store = outlier_cloud_store.voxel_down_sample(voxel_size=0.01)    REMOVE
 
         # transform clouds back for visualization purposes
-        outlier_cloud_vis = copy.deepcopy(outlier_cloud_store).transform(np.linalg.inv(T))
+        current_outlier_cloud_vis = copy.deepcopy(outlier_cloud).transform(np.linalg.inv(T))  # NEED TO CHANGE SO THAT STORED POINTS ARE INDEPENDENT OF DRONE POS
         inlier_cloud_vis = copy.deepcopy(inlier_cloud).transform(np.linalg.inv(T))
+
+        current_outlier_points_vis = np.asarray(current_outlier_cloud_vis.points)     # CHANGE MADE SO NOW THE EXISTING OUTLIER POINTS DONT GET TRANSFORMED EVERYTIME
+        outlier_cloud_store.points.extend(current_outlier_points_vis)
+        outlier_cloud_store = outlier_cloud_store.voxel_down_sample(voxel_size=0.01)
 
         # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
         ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-        ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+        ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_store, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
 
     
         publisher1.publish(ros_inlier_cloud)

@@ -101,18 +101,20 @@ def clean_pointcloud_and_ttbs(outlier_cloud):
         points_to_remove.extend(ttb2_cluster.index.to_list()) # update list to store the index of all points which are to be removed
         
         outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
+        print("outlier cloud size after cleaning: ")
+        print(len(outlier_cloud.points))
 
         return outlier_cloud
     
 def plane_segmentation(cloud_global):
-    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.03,
+    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.02,
                                              ransac_n=3,
                                              num_iterations=100)
     [a, b, c, d] = plane_model
     #print(f"Plane equation: {a:.2f}x + {b:.2f}y + {c:.2f}z + {d:.2f} = 0")
     #print("Displaying pointcloud with planar points in red ...")
     inlier_cloud = cloud_global.select_by_index(inliers)
-    inlier_cloud.paint_uniform_color([1.0, 0, 0])
+    inlier_cloud.paint_uniform_color([0, 0, 0])
     outlier_cloud = cloud_global.select_by_index(inliers, invert=True)
     return outlier_cloud, inlier_cloud
 
@@ -145,7 +147,7 @@ while not rospy.is_shutdown():
 
     try: #HELLO I CHANGED THIS TO FIDUCIAL 3 JUST FOR TESTING!!!!
         # lookup transform between map and robot_1/base_footprint
-        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/robot_1/base_footprint', rospy.Time(0))
+        (trans_ttb1,rot_ttb1) = tf_listener_ttb1.lookupTransform('/map', '/fiducial_1', rospy.Time(0))
     except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
         print("No tf data for robot_1. Set to z=100 for point removal(out of the way)")
         (trans_ttb1,rot_ttb1) = ([0.0, 0.0, 100.0], [0.0, 0.0, 0.0, 1.0])
@@ -177,26 +179,27 @@ while not rospy.is_shutdown():
     cloud_global = cloud_global.select_by_index(np.where(points_global[:, 2] < 0.2)[0])
     
     # PLANE SEGMENTATION
-    outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
+    if(len(cloud_global.points)>100):
+        outlier_cloud, inlier_cloud = plane_segmentation(cloud_global)
 
-    # CHECK THAT WE HAVE AN OUTLIER_CLOUD FROM PLANE SEGMENTATION
-    if(len(outlier_cloud.points)>100):
-        # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD and REMOVE TTB POINTS
-        outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
+        # CHECK THAT WE HAVE AN OUTLIER_CLOUD FROM PLANE SEGMENTATION
+        if(len(outlier_cloud.points)>100):
+            # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD and REMOVE TTB POINTS
+            outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
 
-        # transform clouds back for visualization purposes
-        outlier_cloud_vis = copy.deepcopy(outlier_cloud)
-        outlier_cloud_vis.transform(np.linalg.inv(T))
-        inlier_cloud_vis = copy.deepcopy(inlier_cloud)
-        inlier_cloud_vis.transform(np.linalg.inv(T))
+            # transform clouds back for visualization purposes
+            outlier_cloud_vis = copy.deepcopy(outlier_cloud)
+            outlier_cloud_vis.transform(np.linalg.inv(T))
+            inlier_cloud_vis = copy.deepcopy(inlier_cloud)
+            inlier_cloud_vis.transform(np.linalg.inv(T))
 
-        # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
-        ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-        ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+            # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
+            ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+            ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
 
-    
-        publisher1.publish(ros_inlier_cloud)
-        publisher2.publish(ros_outlier_cloud)
+        
+            publisher1.publish(ros_inlier_cloud)
+            publisher2.publish(ros_outlier_cloud)
 
     print("-------------------------")
     current_cloud = None

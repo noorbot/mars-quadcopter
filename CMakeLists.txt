@@ -149,6 +149,16 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+add_executable(camera_coords         #new lines - noor
+  src/camera_coords.cpp
+)
+add_dependencies(camera_coords 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(camera_coords
+  ${catkin_LIBRARIES}
+)
+
 add_executable(offb_coords         #new lines - noor
   src/offb_coords.cpp
 )
