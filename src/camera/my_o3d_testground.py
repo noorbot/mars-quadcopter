@@ -12,6 +12,8 @@ import copy
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+
+from visualization_msgs.msg import Marker
 np.set_printoptions(threshold=sys.maxsize)
 
 
@@ -71,34 +73,39 @@ def clean_pointcloud_and_ttbs(outlier_cloud):
         index_1 = outlier_cloud_labels[outlier_cloud_labels['label']==-1]
         points_to_remove = index_1.index.to_list() # list to store the index of all points which are to be removed
         # remove points with fewer than 50 members in the cluster, or only have members within the 'sandwich'
-        for cluster in range(max_label):
+
+        for cluster in range(max_label+1):
             curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
-            if(len(curr_label) < 100) or not((abs(curr_label['z'].min()) > 0.05) or (abs(curr_label['z'].max()) > 0.05)): # remove points that a) are in a cluster with fewer than 100 members or b) are in a cluster with extreme z heights lower than 3cm from the ground.
+            if(len(curr_label) < 50): # remove points that are in a cluster with fewer than 100 members 
+                print("Removing small clusters from obstacle pointcloud")
+                points_to_remove.extend(curr_label.index.to_list())
+            if(not((abs(curr_label['z'].min()) > 0.05) or (abs(curr_label['z'].max()) > 0.05))): # remove points that are in a cluster with extreme z heights lower than 3cm from the ground.
+                print("Removing shallow enclosed objects from obstacle pointcloud")
                 points_to_remove.extend(curr_label.index.to_list())
 
-        # remove points from outlier cloud
-        #outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
-        #outlier_cloud_labels = outlier_cloud_labels.drop(index=points_to_remove)
+        # TTB1 removal
+        if(trans_ttb1[2] !=100):  # only remove ttb if it is in sight (z is set to 100 when not in sight to move out of the way in tf_listener)
+            print("removing TTB1 points from obstacle pointcloud")
+            ttb1_x = trans_ttb1[0]
+            ttb1_y = trans_ttb1[1]
+            center1 = np.array([ttb1_x, ttb1_y, 0.15])
+            pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)  # build KDTree from outlier_cloud
+            [k, idx, _] = pcd_tree.search_knn_vector_3d(center1, 1) # use knn to find 1 nearest point to ttb location
+            ttb1_cluster_label = outlier_cloud_labels.at[idx[0], 'label'] # identify the label of this nearest point
+            ttb1_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb1_cluster_label] # find all points with this label. this is the ttb cluster
+            points_to_remove.extend(ttb1_cluster.index.to_list()) # update list to store the index of all points which are to be removed
 
-        # REMOVE TTB1
-        ttb1_x = trans_ttb1[0]
-        ttb1_y = trans_ttb1[1]
-        center1 = np.array([ttb1_x, ttb1_y, 0.15])
-        pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)  # build KDTree from outlier_cloud
-        [k, idx, _] = pcd_tree.search_knn_vector_3d(center1, 1) # use knn to find 1 nearest point to ttb location
-        ttb1_cluster_label = outlier_cloud_labels.at[idx[0], 'label'] # identify the label of this nearest point
-        ttb1_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb1_cluster_label] # find all points with this label. this is the ttb cluster
-        points_to_remove.extend(ttb1_cluster.index.to_list()) # update list to store the index of all points which are to be removed
-
-        # REMOVE TTB2
-        ttb2_x = trans_ttb2[0]
-        ttb2_y = trans_ttb2[1]
-        center2 = np.array([ttb2_x, ttb2_y, 0.15])
-        pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)  # build KDTree from outlier_cloud
-        [k, idx, _] = pcd_tree.search_knn_vector_3d(center2, 1) # use knn to find 1 nearest point to ttb location
-        ttb2_cluster_label = outlier_cloud_labels.at[idx[0], 'label'] # identify the label of this nearest point
-        ttb2_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb2_cluster_label] # find all points with this label. this is the ttb cluster
-        points_to_remove.extend(ttb2_cluster.index.to_list()) # update list to store the index of all points which are to be removed
+        # TTB2 removal
+        if(trans_ttb2[2] !=100):  # only remove ttb if it is in sight (z is set to 100 when not in sight to move out of the way in tf_listener)
+            print("removing TTB2 points from obstacle pointcloud")
+            ttb2_x = trans_ttb2[0]
+            ttb2_y = trans_ttb2[1]
+            center2 = np.array([ttb2_x, ttb2_y, 0.15])
+            pcd_tree = o3d.geometry.KDTreeFlann(outlier_cloud)  # build KDTree from outlier_cloud
+            [k, idx, _] = pcd_tree.search_knn_vector_3d(center2, 1) # use knn to find 1 nearest point to ttb location
+            ttb2_cluster_label = outlier_cloud_labels.at[idx[0], 'label'] # identify the label of this nearest point
+            ttb2_cluster = outlier_cloud_labels[outlier_cloud_labels['label']==ttb2_cluster_label] # find all points with this label. this is the ttb cluster
+            points_to_remove.extend(ttb2_cluster.index.to_list()) # update list to store the index of all points which are to be removed
         
         outlier_cloud = outlier_cloud.select_by_index(points_to_remove, invert=True)
         print("outlier cloud size after cleaning: ")
@@ -118,6 +125,32 @@ def plane_segmentation(cloud_global):
     outlier_cloud = cloud_global.select_by_index(inliers, invert=True)
     return outlier_cloud, inlier_cloud
 
+def find_obstacle_positions(outlier_cloud):
+    # DBSCAN Clustering
+    labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
+    max_label = labels.max()
+    print(f"There are {max_label + 1} obstacles detected")
+    # colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+    # colors[labels < 0] = 0
+    # outlier_cloud.colors = o3d.utility.Vector3dVector(colors[:, :3])
+
+    obstacle_library = pd.DataFrame(columns = ['center_x', 'center_y'])
+    
+    # create pandas Dataframe with all outlier_cloud points including their DBSCAN clustering labels
+    outlier_cloud_labels = pd.DataFrame(outlier_cloud.points, columns=['x','y', 'z'])
+    outlier_cloud_labels['label'] = labels
+    
+    # for each obstacle cluster, calculate its x and y centers and save it to the obstacle_library dataframe
+    for cluster in range(max_label+1):
+        curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
+        center_x = curr_label['x'].mean()
+        center_y = curr_label['y'].mean()
+        obstacle_library.loc[cluster] = [center_x, center_y]
+    
+    print(obstacle_library)
+    return(obstacle_library)
+
+
 # CALLBACK FUNCTION TO READ POINTCLOUD DATA FROM SUBSCRIPTION
 def handle_pointcloud(pointcloud2_msg):
     global current_cloud
@@ -128,6 +161,7 @@ rate = rospy.Rate(1)
 listener_pcd = rospy.Subscriber('/camera/depth/color/points', PointCloud2, handle_pointcloud, queue_size=1)
 publisher1 = rospy.Publisher('inlier_cloud', PointCloud2, queue_size=1)
 publisher2 = rospy.Publisher('outlier_cloud', PointCloud2, queue_size=1)
+marker_pub = rospy.Publisher("/center_marker", Marker, queue_size = 2)
 
 # create the TransformListener object
 tf_listener_cam = tf.TransformListener()
@@ -186,20 +220,46 @@ while not rospy.is_shutdown():
         if(len(outlier_cloud.points)>100):
             # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD and REMOVE TTB POINTS
             outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
+            print(outlier_cloud)
 
-            # transform clouds back for visualization purposes
-            outlier_cloud_vis = copy.deepcopy(outlier_cloud)
-            outlier_cloud_vis.transform(np.linalg.inv(T))
-            inlier_cloud_vis = copy.deepcopy(inlier_cloud)
-            inlier_cloud_vis.transform(np.linalg.inv(T))
+            if(outlier_cloud is not None):  # check if there are any obstacles, if yes proceed
 
-            # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
-            ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-            ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
-
+                #obstacle_library = pd.Dataframe(columns = ['obstacle_num', 'center_x', 'center_y'])
+                obstacle_library = find_obstacle_positions(outlier_cloud)
         
-            publisher1.publish(ros_inlier_cloud)
-            publisher2.publish(ros_outlier_cloud)
+                center_marker = Marker()
+                center_marker.header.frame_id = "map"
+                center_marker.header.stamp = rospy.Time.now()
+                center_marker.type = 2
+                center_marker.id = 0
+                center_marker.scale.x = 0.03
+                center_marker.scale.y = 0.03
+                center_marker.scale.z = 0.03
+                center_marker.color.r = 1.0
+                center_marker.color.a = 1.0
+                center_marker.pose.position.x = obstacle_library.at[0, 'center_x']
+                center_marker.pose.position.y = obstacle_library.at[0, 'center_y']
+                center_marker.pose.position.z = 0.2
+                center_marker.pose.orientation.x = 0.0
+                center_marker.pose.orientation.y = 0.0
+                center_marker.pose.orientation.z = 0.0
+                center_marker.pose.orientation.w = 1.0
+                
+
+                # transform clouds back for visualization purposes
+                outlier_cloud_vis = copy.deepcopy(outlier_cloud)
+                outlier_cloud_vis.transform(np.linalg.inv(T))
+                inlier_cloud_vis = copy.deepcopy(inlier_cloud)
+                inlier_cloud_vis.transform(np.linalg.inv(T))
+
+                # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
+                ros_inlier_cloud = open3d_conversions.to_msg(inlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+                ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_vis, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp)
+
+            
+                publisher1.publish(ros_inlier_cloud)
+                publisher2.publish(ros_outlier_cloud)
+                marker_pub.publish(center_marker)
 
     print("-------------------------")
     current_cloud = None
