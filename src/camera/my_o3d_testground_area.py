@@ -61,7 +61,7 @@ def clean_pointcloud_and_ttbs(outlier_cloud):
     points_to_remove = []
 
     labels = np.array(outlier_cloud.cluster_dbscan(eps=0.03, min_points=10, print_progress=False))
-    if len(np.unique(labels)) > -1:  # if robot is on floor the camera will detect zero clusters and the below code should not be executed
+    if len(np.unique(labels)) > 0:  # if robot is on floor the camera will detect zero clusters and the below code should not be executed
         max_label = labels.max()
         print(f"point cloud has {max_label + 1} clusters")
         colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
@@ -80,10 +80,10 @@ def clean_pointcloud_and_ttbs(outlier_cloud):
             curr_label = outlier_cloud_labels[outlier_cloud_labels['label']==cluster]
             if(len(curr_label) < 50): # remove points that are in a cluster with fewer than 100 members 
                 print("Removing small clusters from obstacle pointcloud")
-                #points_to_remove.extend(curr_label.index.to_list())
-            if(not((abs(curr_label['z'].min()) > 0.03) or (abs(curr_label['z'].max()) > 0.03))): # remove points that are in a cluster with extreme z heights lower than 3cm from the ground.
+                points_to_remove.extend(curr_label.index.to_list())
+            if(not((abs(curr_label['z'].min()) > 0.05) or (abs(curr_label['z'].max()) > 0.05))): # remove points that are in a cluster with extreme z heights lower than 3cm from the ground.
                 print("Removing shallow enclosed objects from obstacle pointcloud")
-                #points_to_remove.extend(curr_label.index.to_list())
+                points_to_remove.extend(curr_label.index.to_list())
 
         # TTB1 removal
         if(trans_ttb1[2] !=100):  # only remove ttb if it is in sight (z is set to 100 when not in sight to move out of the way in tf_listener)
@@ -221,6 +221,7 @@ while not rospy.is_shutdown():
 
         # CHECK THAT WE HAVE AN OUTLIER_CLOUD FROM PLANE SEGMENTATION
         if(len(outlier_cloud.points)>100):
+
             # CALL FUNCTION TO CLEAN UP OBSTACLE POINTCLOUD and REMOVE TTB POINTS
             outlier_cloud = clean_pointcloud_and_ttbs(outlier_cloud)
             print(outlier_cloud)
@@ -248,12 +249,36 @@ while not rospy.is_shutdown():
                 center_marker.pose.orientation.z = 0.0
                 center_marker.pose.orientation.w = 1.0
 
-               # output_path='src/camera/experiment_centers_07.csv'
-               # obstacle_library.to_csv(output_path, mode='a', header=False)
+                output_path='src/camera/experiment_centers_dec12_05.csv'
+                obstacle_library.to_csv(output_path, mode='a', header=False)
                 
+                #
+                # AREA STUF HELLOOOOOOOO
+                #
+                flattened_outlier_points = np.asarray(outlier_cloud.points)
+                max_z = flattened_outlier_points[:,2].max()
+                flattened_outlier_points = flattened_outlier_points[flattened_outlier_points[:, 2] > (max_z-0.015)]
+                flattened_outlier_points[:,2]=0
+                flattened_outlier_cloud = o3d.geometry.PointCloud()
+                flattened_outlier_cloud.points = o3d.utility.Vector3dVector(flattened_outlier_points)
+                flattened_outlier_cloud = flattened_outlier_cloud.voxel_down_sample(voxel_size=0.01)
+                print('AREAAAAAAAAAAAAAAAA:')
+                print(len(flattened_outlier_cloud.points)*0.9)
+
+                flattened_outlier_points = np.asarray(flattened_outlier_cloud.points)
+                min_x = flattened_outlier_points[:,0].min() *100
+                max_x = flattened_outlier_points[:,0].max() *100
+                min_y = flattened_outlier_points[:,1].min()*100
+                max_y = flattened_outlier_points[:,1].max()*100
+                # print(np.amax(flattened_outlier_points[:,0]))
+                # print(flattened_outlier_points[:,0])
+                area = (abs(max_x-min_x))*(abs(max_y-min_y))
+                print(abs(max_x-min_x), area)
+
+
 
                 # transform clouds back for visualization purposes
-                outlier_cloud_vis = copy.deepcopy(outlier_cloud)
+                outlier_cloud_vis = copy.deepcopy(flattened_outlier_cloud)
                 outlier_cloud_vis.transform(np.linalg.inv(T))
                 inlier_cloud_vis = copy.deepcopy(inlier_cloud)
                 inlier_cloud_vis.transform(np.linalg.inv(T))
