@@ -9,12 +9,16 @@ from tf.transformations import euler_from_quaternion
 prev_trans = [0, 0, 0]
 prev_rot = [0, 0, 0, 0]
 
-with open('src/experiment_data/aruco_pos/fake_trial1.csv', 'a') as f:
+file = 'src/experiment_data/aruco_pos/Jan15_data.csv'
+trial_num = 2
+
+with open(file, 'a') as f: #prints header in csv
                 write = csv.writer(f)
-                label = ['trial', 1]
+                label = ['trial', trial_num]
                 write.writerow([])
                 write.writerow([])
                 write.writerow(label)
+                write.writerow(['x', 'y', 'z', 'yaw'])
 
 # function to create a Marker object from the trans and rot array populated by the tf listener
 def create_marker(trans, rot):
@@ -32,7 +36,7 @@ def create_marker(trans, rot):
 
     # set shape, Arrow: 0; Cube: 1 ; Sphere: 2 ; Cylinder: 3
     marker.type = 2
-    marker.id = 3  # fiducial id
+    marker.id = 1  # fiducial id
 
     # Set the scale of the marker
     marker.scale.x = 0.2
@@ -72,7 +76,7 @@ def locate_marker():
     while not rospy.is_shutdown():
         try:
             # lookup transform between map and fiducial_0 
-            (trans,rot) = listener.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
+            (trans,rot) = listener.lookupTransform('/map', '/fiducial_1', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         
@@ -82,7 +86,7 @@ def locate_marker():
             new_row = trans.copy()
             new_row.append(aruco_yaw)
             print(new_row)
-            with open('src/experiment_data/aruco_pos/fake_trial1.csv', 'a') as f:                
+            with open(file, 'a') as f:                
                 write = csv.writer(f)
                 write.writerow(new_row)
         prev_trans = trans
