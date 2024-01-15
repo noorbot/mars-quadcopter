@@ -17,7 +17,7 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "camera_coords");
+    ros::init(argc, argv, "aruco_coords");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
@@ -48,32 +48,22 @@ int main(int argc, char **argv)
     geometry_msgs::PoseStamped pose1;
     pose1.pose.position.x = 0;
     pose1.pose.position.y = 0;
-    pose1.pose.position.z = 1;
+    pose1.pose.position.z = 1.25;
 
     geometry_msgs::PoseStamped pose2;
-    pose2.pose.position.x = 1;
-    pose2.pose.position.y = 0;
-    pose2.pose.position.z = 1;
+    pose2.pose.position.x = 0;
+    pose2.pose.position.y = 0.75;
+    pose2.pose.position.z = 1.25;
 
     geometry_msgs::PoseStamped pose3;
-    pose3.pose.position.x = 1;
-    pose3.pose.position.y = 0.75;
-    pose3.pose.position.z = 1;
+    pose3.pose.position.x = 0;
+    pose3.pose.position.y = 0;
+    pose3.pose.position.z = 1.25;
 
     geometry_msgs::PoseStamped pose4;
     pose4.pose.position.x = 0;
-    pose4.pose.position.y = 0.75;
-    pose4.pose.position.z = 1;
-
-    geometry_msgs::PoseStamped pose5;
-    pose5.pose.position.x = 0;
-    pose5.pose.position.y = 0;
-    pose5.pose.position.z = 1;
-
-    geometry_msgs::PoseStamped pose6;
-    pose6.pose.position.x = 0;
-    pose6.pose.position.y = 0;
-    pose6.pose.position.z = 0;
+    pose4.pose.position.y = 0;
+    pose4.pose.position.z = 0;
 
     //send a few setpoints before starting
     for(int i = 100; ros::ok() && i > 0; --i){
@@ -109,7 +99,7 @@ int main(int argc, char **argv)
                     last_request = ros::Time::now();
                     fly_time = ros::Time::now();
                     order++;
-                    ROS_INFO("Going to Pose 1 binch");
+                    ROS_INFO("Rising up!");
                 }
             }
         }
@@ -134,29 +124,13 @@ int main(int argc, char **argv)
             pose = pose3;
             if(ros::Time::now() - fly_time > ros::Duration(26.0)) { 
                 order++;
-                ROS_INFO("Going to Pose 4");
+                ROS_INFO("Going to Land");
             }
         }
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 4) {
             pose = pose4;
-            if(ros::Time::now() - fly_time > ros::Duration(32.0)) { 
-                order++;
-                ROS_INFO("Going to Pose 5");
-            }
-        }
-
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 5) {
-            pose = pose5;
-            if(ros::Time::now() - fly_time > ros::Duration(38.0)) { 
-                order++;
-                ROS_INFO("Going to Land");
-            }
-        }
-
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 6) {
-            pose = pose6;
-            if(ros::Time::now() - fly_time > ros::Duration(41.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(29.0)) { 
                 order++;
                 offb_set_mode.request.custom_mode = "AUTO.LAND"; 
                 set_mode_client.call(offb_set_mode);
