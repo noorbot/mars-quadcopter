@@ -149,6 +149,16 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+add_executable(obstacle_coords         #new lines - noor
+  src/obstacle_coords.cpp
+)
+add_dependencies(obstacle_coords 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(obstacle_coords
+  ${catkin_LIBRARIES}
+)
+
 add_executable(aruco_coords         #new lines - noor
   src/aruco_coords.cpp
 )
