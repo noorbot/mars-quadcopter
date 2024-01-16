@@ -12,6 +12,7 @@ import copy
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+import csv
 
 from visualization_msgs.msg import Marker
 np.set_printoptions(threshold=sys.maxsize)
@@ -22,6 +23,18 @@ rospy.init_node('my_plane_segmentation')
 current_cloud = None
 
 master_obstacle_library = pd.DataFrame(columns = ['obst_num', 'center_x', 'center_y'])
+
+# write data to csv
+file = 'src/camera/experiment_data/Jan16_exp_centers.csv'
+trial_num = 3
+with open(file, 'a') as f: #prints header in csv
+                write = csv.writer(f)
+                label = [trial_num]
+                write.writerow([])
+                write.writerow([])
+                write.writerow([])
+                write.writerow(label)
+                write.writerow(['label', 'x', 'y', 'z'])
 
 # my function to create the transformation matrix from /map to /camera_depth_optical_frame
 def convert_to_transfromation_matrix(trans, rot):
@@ -248,8 +261,8 @@ while not rospy.is_shutdown():
                 center_marker.pose.orientation.z = 0.0
                 center_marker.pose.orientation.w = 1.0
 
-               # output_path='src/camera/experiment_centers_07.csv'
-               # obstacle_library.to_csv(output_path, mode='a', header=False)
+
+                obstacle_library.to_csv(file, mode='a', header=False)
                 
 
                 # transform clouds back for visualization purposes
