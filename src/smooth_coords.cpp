@@ -45,45 +45,35 @@ int main(int argc, char **argv)
 
     geometry_msgs::PoseStamped pose;
 
-    // double poseArray[3][9] = {
-    //     {0, 0, 0},
-    //     {0, 0, 1.25},
-    //     {0, 0.2, 1.25},
-    //     {0, 0.4, 1.25},
-    //     {0, 0.6, 1.25},
-    //     {0, 0.8, 1.25},
-    //     {0, 1.0, 1.25},
-    //     {0, 1.2, 1.25},
-    //     {0, 1.2, 0},        
-    // }
+    geometry_msgs::PoseStamped risePose;
+    risePose.pose.position.x = 0;
+    risePose.pose.position.y = 0;
+    risePose.pose.position.z = 1.25;
 
+    double poseArray[6][3] = {
+        {0, 0.2, 1.25},
+        {0, 0.4, 1.25},
+        {0, 0.6, 1.25},
+        {0, 0.8, 1.25},
+        {0, 1.0, 1.25},
+        {0, 1.2, 1.25}
+    };
 
-    geometry_msgs::PoseStamped pose1;
-    pose1.pose.position.x = 0;
-    pose1.pose.position.y = 0;
-    pose1.pose.position.z = 1.25;
+    int numPoses = sizeof(poseArray)/sizeof(poseArray[0]);
 
-    geometry_msgs::PoseStamped pose2;
-    pose2.pose.position.x = 0;
-    pose2.pose.position.y = 1;
-    pose2.pose.position.z = 1.25;
+    geometry_msgs::PoseStamped landHoverPose;
+    landHoverPose.pose.position.x = 0;
+    landHoverPose.pose.position.y = 1.2;
+    landHoverPose.pose.position.z = 1.25;
 
-    geometry_msgs::PoseStamped pose3;
-    pose3 = pose2;
-
-    geometry_msgs::PoseStamped pose4;
-    pose4.pose.position.x = 0;
-    pose4.pose.position.y = 0;
-    pose4.pose.position.z = 1.25;
-
-    geometry_msgs::PoseStamped pose5;
-    pose5.pose.position.x = 0;
-    pose5.pose.position.y = 0;
-    pose5.pose.position.z = 0;
+    geometry_msgs::PoseStamped landPose;
+    landPose.pose.position.x = 0;
+    landPose.pose.position.y = 1.2;
+    landPose.pose.position.z = 0;
 
     //send a few setpoints before starting
     for(int i = 100; ros::ok() && i > 0; --i){
-        local_pos_pub.publish(pose1);
+        local_pos_pub.publish(risePose);
         ros::spinOnce();
         rate.sleep();
     }
@@ -101,16 +91,14 @@ int main(int argc, char **argv)
     while(ros::ok()){
         if( current_state.mode != "OFFBOARD" &&
             (ros::Time::now() - last_request > ros::Duration(5.0))){
-            if( set_mode_client.call(offb_set_mode) &&
-                offb_set_mode.response.mode_sent && order == 0){
+            if( set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent && order == 0){
                 ROS_INFO("Offboard enabled");
             }
             last_request = ros::Time::now();
-        } else {
-            if( !current_state.armed &&
-                (ros::Time::now() - last_request > ros::Duration(5.0)) && order == 0){
-                if( arming_client.call(arm_cmd) &&
-                    arm_cmd.response.success){
+        } 
+        else {
+            if( !current_state.armed && (ros::Time::now() - last_request > ros::Duration(5.0)) && order == 0){
+                if( arming_client.call(arm_cmd) && arm_cmd.response.success){
                     ROS_INFO("Vehicle armed");
                     last_request = ros::Time::now();
                     fly_time = ros::Time::now();
@@ -121,48 +109,40 @@ int main(int argc, char **argv)
         }
 
         if(current_state.mode == "OFFBOARD" && current_state.armed && order == 1) {
-            pose = pose1;
+            pose = risePose;
             if(ros::Time::now() - fly_time > ros::Duration(14.0)) { 
                 order++;
-                ROS_INFO("Going to Pose 2");
+                ROS_INFO("Entering smooth motion");
             }
         }
 
         else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 2) {
-            pose = pose2;
-            if(ros::Time::now() - fly_time > ros::Duration(20.0)) { 
-                order++;
-                ROS_INFO("now lets go slowwww");
-            }
-        }
-        
-        // trying something new here
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 3) {
-            for(int i=0; i<10; i++){
-                pose3.pose.position.y = pose3.pose.position.y-0.2;
-                pose=pose3;
-                std::cout << pose3.pose.position;
-                std::cout << "---"
+            for(int i=0; i<numPoses; i++){   // change to how many rows in poseArray
+                pose.pose.position.x = poseArray[i][0];
+                pose.pose.position.y = poseArray[i][1];
+                pose.pose.position.z = poseArray[i][2];
+                std::cout << pose.pose.position;
+                std::cout << "---" << "\n";
                 local_pos_pub.publish(pose);//this should be here right?
                 sleep(1.0);
             }
-            if(ros::Time::now() - fly_time > ros::Duration(30.0)) { 
+            if(ros::Time::now() - fly_time > ros::Duration(14.0+numPoses)) {  // adjust number of seconds here to be as many rows in poseArray
                 order++;
-                ROS_INFO("Going to Pose 4");
+                ROS_INFO("Go to land hover pose");
             }
         }
 
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 4) {
-            pose = pose4;
-            if(ros::Time::now() - fly_time > ros::Duration(36.0)) { 
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 3) {
+            pose = landHoverPose;
+            if(ros::Time::now() - fly_time > ros::Duration(14.0+numPoses+3.0)) { 
                 order++;
                 ROS_INFO("Going to Land");
             }
         }
 
-        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 5) {
-            pose = pose5;
-            if(ros::Time::now() - fly_time > ros::Duration(39.0)) { 
+        else if(current_state.mode == "OFFBOARD" && current_state.armed && order == 4) {
+            pose = landPose;
+            if(ros::Time::now() - fly_time > ros::Duration(14.0+numPoses+3.0+3.0)) { 
                 order++;
                 offb_set_mode.request.custom_mode = "AUTO.LAND"; 
                 set_mode_client.call(offb_set_mode);
