@@ -26,7 +26,7 @@ master_obstacle_library = pd.DataFrame(columns = ['obst_num', 'center_x', 'cente
 
 # write data to csv
 file = 'src/camera/experiment_data/Jan16_exp_centers.csv'
-trial_num = 3
+trial_num = 4
 with open(file, 'a') as f: #prints header in csv
                 write = csv.writer(f)
                 label = [trial_num]
