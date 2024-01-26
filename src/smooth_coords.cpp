@@ -50,16 +50,22 @@ int main(int argc, char **argv)
     risePose.pose.position.y = 0;
     risePose.pose.position.z = 1.25;
 
-    double poseArray[6][3] = {
+    double poseArray[12][3] = {
+        {0, 0.1, 1.25},
         {0, 0.2, 1.25},
+        {0, 0.3, 1.25},
         {0, 0.4, 1.25},
+        {0, 0.5, 1.25},
         {0, 0.6, 1.25},
+        {0, 0.7, 1.25},
         {0, 0.8, 1.25},
+        {0, 0.9, 1.25},
         {0, 1.0, 1.25},
+        {0, 1.1, 1.25},
         {0, 1.2, 1.25}
     };
 
-    int numPoses = sizeof(poseArray)/sizeof(poseArray[0]);
+    int numPoses = sizeof(poseArray)/sizeof(poseArray[0]); // get number of rows in poseArray
 
     geometry_msgs::PoseStamped landHoverPose;
     landHoverPose.pose.position.x = 0;
@@ -123,7 +129,7 @@ int main(int argc, char **argv)
                 pose.pose.position.z = poseArray[i][2];
                 std::cout << pose.pose.position;
                 std::cout << "---" << "\n";
-                local_pos_pub.publish(pose);//this should be here right?
+                local_pos_pub.publish(pose);
                 sleep(1.0);
             }
             if(ros::Time::now() - fly_time > ros::Duration(14.0+numPoses)) {  // adjust number of seconds here to be as many rows in poseArray
