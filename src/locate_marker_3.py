@@ -4,8 +4,12 @@ import rospy
 import tf
 from visualization_msgs.msg import Marker
 
+do_once = False
+
 # function to create a Marker object from the trans and rot array populated by the tf listener
 def create_marker(trans, rot):
+
+    global do_once # added this variable Feb 7 2024 so that the aruco is only read once. this helps with rosbagging
 
     # create the Marker object to be returned
 
@@ -41,6 +45,8 @@ def create_marker(trans, rot):
     marker.pose.orientation.y = rot[1]
     marker.pose.orientation.z = rot[2]
     marker.pose.orientation.w = rot[3]
+
+    do_once = True  # read aruco once, that's all we need
     
     # return the Marker object
     return marker 
@@ -55,11 +61,13 @@ def locate_marker():
 
     rate = rospy.Rate(10)       # 10 Hz refresh rate
 
+    global do_once
 
     while not rospy.is_shutdown():
         try:
-            # lookup transform between map and fiducial_0 
-            (trans,rot) = listener.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
+            # lookup transform between map and fiducial
+            if(do_once == False):  # only read aruco if havent got it before
+                (trans,rot) = listener.lookupTransform('/map', '/fiducial_3', rospy.Time(0))
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             continue
         
