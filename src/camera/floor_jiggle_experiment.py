@@ -37,12 +37,20 @@ while not rospy.is_shutdown():
     o3d_cloud = o3d_cloud.voxel_down_sample(voxel_size=0.01)
 
 # NEW STUFF HERE FOR FLOOR JIGGLE
+    # for one frame, print the range of max-min in z (m)
     output_cloud = copy.deepcopy(o3d_cloud)
     output_points = np.asarray(output_cloud.points)
     max_point = np.max(output_points[:, 2])
     min_point = np.min(output_points[:, 2])
     print(max_point - min_point)
     #print(min_point)
+
+    # # print z-value of a chosen pixel
+    # static_point = np.array([0, 0, 0.15])
+    # pcd_tree = o3d.geometry.KDTreeFlann(output_cloud)  # build KDTree from outlier_cloud
+    # [k, idx, _] = pcd_tree.search_knn_vector_xd(static_point, 1) # use knn to find 1 nearest point to ttb location
+
+    
 
 
     # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)

@@ -129,7 +129,7 @@ def clean_pointcloud_and_ttbs(outlier_cloud):
         return outlier_cloud
     
 def plane_segmentation(cloud_global):
-    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.02,
+    plane_model, inliers = cloud_global.segment_plane(distance_threshold=0.03,
                                              ransac_n=3,
                                              num_iterations=100)
     [a, b, c, d] = plane_model
