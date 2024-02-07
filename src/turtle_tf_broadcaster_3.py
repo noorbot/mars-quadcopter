@@ -44,7 +44,7 @@ def turtle_tf_broadcaster():
 
     br = tf.TransformBroadcaster()
 
-    rate = rospy.Rate(10.0)
+    rate = rospy.Rate(100.0)
     while not rospy.is_shutdown():
 
         # Quaternion(w, x, y, z)    MAY WANT TO LEAVE OUT X AND Y
