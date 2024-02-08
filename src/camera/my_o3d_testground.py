@@ -24,17 +24,17 @@ current_cloud = None
 
 master_obstacle_library = pd.DataFrame(columns = ['obst_num', 'center_x', 'center_y'])
 
-# write data to csv
-file = 'src/camera/experiment_data/Jan16_exp_centers.csv'
-trial_num = 4
-with open(file, 'a') as f: #prints header in csv
-                write = csv.writer(f)
-                label = [trial_num]
-                write.writerow([])
-                write.writerow([])
-                write.writerow([])
-                write.writerow(label)
-                write.writerow(['label', 'x', 'y', 'z'])
+# write data to csv               COMMENT BACK IN IF YOU WANT
+# file = 'src/camera/experiment_data/Jan16_exp_centers.csv'
+# trial_num = 4
+# with open(file, 'a') as f: #prints header in csv
+#                 write = csv.writer(f)
+#                 label = [trial_num]
+#                 write.writerow([])
+#                 write.writerow([])
+#                 write.writerow([])
+#                 write.writerow(label)
+#                 write.writerow(['label', 'x', 'y', 'z'])
 
 # my function to create the transformation matrix from /map to /camera_depth_optical_frame
 def convert_to_transfromation_matrix(trans, rot):
@@ -262,7 +262,7 @@ while not rospy.is_shutdown():
                 center_marker.pose.orientation.w = 1.0
 
 
-                obstacle_library.to_csv(file, mode='a', header=False)
+                # obstacle_library.to_csv(file, mode='a', header=False)   #  COMMENT BACK IN IF WANTED
                 
 
                 # transform clouds back for visualization purposes
