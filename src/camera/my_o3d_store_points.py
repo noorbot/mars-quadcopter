@@ -193,7 +193,7 @@ tf_listener_ttb1 = tf.TransformListener()
 tf_listener_ttb2 = tf.TransformListener()
 
 
-while not rospy.is_shutdown():
+while True:
     if current_cloud is None:
         continue
 
@@ -284,14 +284,13 @@ while not rospy.is_shutdown():
                 outlier_cloud_store = ignore_store_ttb_points(outlier_cloud_store)
 
 
-                # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
-                #ros_inlier_cloud = open3d_conversions.to_msg(outlier_cloud_store, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp) dont need this taking up computing power
-                ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_store, frame_id="map", stamp=current_cloud.header.stamp) # NxOTE FRAME_ID = MAP!!! needed for store points
+    # CONVERT O3D DATA BACK TO POINTCLOUD MSG TYPE - SEE TIME THIS TAKES (MOST TIME CONSUMING)
+    #ros_inlier_cloud = open3d_conversions.to_msg(outlier_cloud_store, frame_id=current_cloud.header.frame_id, stamp=current_cloud.header.stamp) dont need this taking up computing power
+    ros_outlier_cloud = open3d_conversions.to_msg(outlier_cloud_store, frame_id="map", stamp=rospy.Time.now()) # NxOTE FRAME_ID = MAP!!! needed for store points
+    print(ros_outlier_cloud.width)
 
-            
-                #publisher1.publish(ros_inlier_cloud)
-                publisher2.publish(ros_outlier_cloud)
-                marker_pub.publish(center_marker)
+    #publisher1.publish(ros_inlier_cloud)
+    publisher2.publish(ros_outlier_cloud)
 
     print("-------------------------")
     current_cloud = None
