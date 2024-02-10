@@ -8,7 +8,6 @@ from pyquaternion import Quaternion
 from tf.transformations import euler_from_quaternion
 import math
 import pandas as pd
-import time
 
 avgArucoPose = PoseStamped()
 ttbPose = PoseStamped()    # PoseStamped object to be published as the aruco position
@@ -20,7 +19,7 @@ aruco_df = pd.DataFrame(columns = ['x', 'y', 'z', 'orientation.x', 'orientation.
 conditionMet = False
 firstReading = True
 old_value = [0,0,0]
-start = time.process_time()
+start = rospy.Time(5.0)
 
 # callback function for the location of the aruco marker
 def listen_aruco_pose(trans, rot):
@@ -35,7 +34,7 @@ def listen_aruco_pose(trans, rot):
         
         if (firstReading):
             print(old_value)
-            start = time.process_time()
+            start = rospy.get_rostime()
             firstReading = False
             print("FIRST READING")
 
@@ -52,18 +51,18 @@ def listen_aruco_pose(trans, rot):
             ]
         
             aruco_df.loc[len(aruco_df)] = list
-            print((time.process_time() - start))
+            print((rospy.get_rostime() - start))
         
 
         old_value = new_value
 
-        if (len(aruco_df.index) > 10 and (time.process_time() - start) > 0.3):  # if we have more than 10 aruco readings and over 5 seconds has passed since the first one
+        if (len(aruco_df.index) > 10 and (rospy.get_rostime() - start) > rospy.Duration(5)):  # if we have more than 10 aruco readings and over 5 seconds has passed since the first one
             print(aruco_df)
             conditionMet = True
 
             avgArucoPose.pose.position.x = aruco_df.loc[:, 'x'].mean()
-            avgArucoPose.pose.position.y = aruco_df.loc[:, 'x'].mean()
-            avgArucoPose.pose.position.z = aruco_df.loc[:, 'x'].mean()
+            avgArucoPose.pose.position.y = aruco_df.loc[:, 'y'].mean()
+            avgArucoPose.pose.position.z = aruco_df.loc[:, 'z'].mean()
             avgArucoPose.pose.orientation.x = aruco_df.loc[:, 'orientation.x'].mean()
             avgArucoPose.pose.orientation.y = aruco_df.loc[:, 'orientation.y'].mean()
             avgArucoPose.pose.orientation.z = aruco_df.loc[:, 'orientation.z'].mean()
@@ -145,7 +144,7 @@ def turtle_tf_broadcaster():
             br.sendTransform((ttbPose.pose.position.x, ttbPose.pose.position.y, 0.0),
                             (norm_quat.x, norm_quat.y, norm_quat.z, norm_quat.w),
                             rospy.Time.now(),
-                            "robot_2/odom",
+                            "robot_2/odom",         
                             "robot_2_noor/odom")
         rate.sleep()
 
