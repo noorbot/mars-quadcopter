@@ -172,7 +172,7 @@ def handle_pointcloud(pointcloud2_msg):
     global current_cloud
     current_cloud = pointcloud2_msg
 
-rate = rospy.Rate(1)
+rate = rospy.Rate(10)
 
 listener_pcd = rospy.Subscriber('/camera/depth/color/points', PointCloud2, handle_pointcloud, queue_size=1)
 publisher1 = rospy.Publisher('inlier_cloud', PointCloud2, queue_size=1)
