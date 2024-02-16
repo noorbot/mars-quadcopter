@@ -8,6 +8,7 @@ from pyquaternion import Quaternion
 from tf.transformations import euler_from_quaternion
 import math
 import pandas as pd
+import csv
 
 avgArucoPose = PoseStamped()
 ttbPose = PoseStamped()    # PoseStamped object to be published as the UGV position
@@ -132,6 +133,15 @@ def turtle_tf_broadcaster():
                 rospy.set_param('/robot_2/map_merge/init_pose_yaw' , 0.0) #aruco_yaw)   Set yaw to zero always, as with simulation. Taken care of already by broadcaster
                 rospy.loginfo("PARAMS SET robot 2: x:" + str(ttbPose.pose.position.x) + "  y:" + str(ttbPose.pose.position.y) + "  z:" + str(ttbPose.pose.position.z) + "  yaw: 0.0")
                 
+                # write data to csv
+                file = 'Feb15_aruco_heights_1.csv'
+                trial_num = 2.5
+                with open(file, 'a') as f: #prints header in csv
+                                write = csv.writer(f)
+                                data= [trial_num, ttbPose.pose.position.x, ttbPose.pose.position.y, norm_quat.w]
+                                write.writerow(data)
+
+
                 do_once = False
 
             # publish transform for the UGV starting pose [from robot_x_noor/odom (middle step tf which is at same loc as /map) to robot_x/odom]
