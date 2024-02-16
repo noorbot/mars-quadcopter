@@ -149,6 +149,17 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+
+add_executable(smooth_coords_demo         #new lines - noor
+  src/smooth_coords_demo.cpp
+)
+add_dependencies(smooth_coords_demo 
+  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
+)
+target_link_libraries(smooth_coords_demo
+  ${catkin_LIBRARIES}
+)
+
 add_executable(smooth_coords         #new lines - noor
   src/smooth_coords.cpp
 )
