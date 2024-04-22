@@ -60,7 +60,7 @@ To get the UGVs to avoid the obstacles in this pointlcoud, their costmap paramet
 ## What may need to be modified based on your setup
 - ArUco marker ID numbers in [turtle_tf_broadcaster_1_avg.py](/src/robot localization/turtle_tf_broadcaster_1_avg.py) line 106.
 - Depending on how many UGVs you are using. Versions of the above codes with the suffix _3 and for  3 UGVs rather than 2.
-- Input pointcloud topic name in [my_o3d_store_points.py](/src/obstacle mapping/my_o3d_store_points)
+- Input pointcloud topic name in [my_o3d_store_points.py](/src/obstacle mapping/my_o3d_store_points) in subscriber line 190.
 
 
 
