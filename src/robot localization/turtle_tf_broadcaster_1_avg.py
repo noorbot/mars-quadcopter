@@ -1,4 +1,9 @@
 #! /usr/bin/env python3
+
+# Noor Khabbaz 2024
+# This code was written for my Masters Thesis at Ontario Tech University under Dr. Scott Nokleby
+# This file contains my method for relative localization.
+
 import rospy
 import tf
 from geometry_msgs.msg import PoseStamped

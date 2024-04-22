@@ -1,4 +1,9 @@
 #! /usr/bin/env python3
+
+# Noor Khabbaz 2024
+# This code was written for my Masters Thesis at Ontario Tech University under Dr. Scott Nokleby
+# This file contains my method for obstacle mapping.
+
 import rospy
 import open3d as o3d
 import open3d_conversions
