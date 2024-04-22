@@ -151,7 +151,7 @@ include_directories(
 
 
 add_executable(smooth_coords_demo         #new lines - noor
-  src/smooth_coords_demo.cpp
+  "src/drone autonomous flight/smooth_coords_demo.cpp"
 )
 add_dependencies(smooth_coords_demo 
   ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
@@ -161,7 +161,7 @@ target_link_libraries(smooth_coords_demo
 )
 
 add_executable(smooth_coords         #new lines - noor
-  src/smooth_coords.cpp
+  "src/drone autonomous flight/smooth_coords.cpp"
 )
 add_dependencies(smooth_coords 
   ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
@@ -170,115 +170,7 @@ target_link_libraries(smooth_coords
   ${catkin_LIBRARIES}
 )
 
-add_executable(obstacle_coords         #new lines - noor
-  src/obstacle_coords.cpp
-)
-add_dependencies(obstacle_coords 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(obstacle_coords
-  ${catkin_LIBRARIES}
-)
 
-add_executable(aruco_coords         #new lines - noor
-  src/aruco_coords.cpp
-)
-add_dependencies(aruco_coords 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(aruco_coords
-  ${catkin_LIBRARIES}
-)
-
-add_executable(camera_coords         #new lines - noor
-  src/camera_coords.cpp
-)
-add_dependencies(camera_coords 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(camera_coords
-  ${catkin_LIBRARIES}
-)
-#[[
-add_executable(offb_coords         #new lines - noor
-  src/offb_coords.cpp
-)
-add_dependencies(offb_coords 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(offb_coords
-  ${catkin_LIBRARIES}
-)
-
-add_executable(offb_coords_sub         #new lines - noor
-  src/offb_coords_sub.cpp
-)
-add_dependencies(offb_coords_sub 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(offb_coords_sub
-  ${catkin_LIBRARIES}
-)
-
-add_executable(offb_node         #new lines - noor
-  src/offb_node.cpp
-)
-add_dependencies(offb_node 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(offb_node
-  ${catkin_LIBRARIES}
-)
-
-add_executable(go_to_simple         #new lines - noor
-  src/go_to_simple.cpp
-)
-add_dependencies(go_to_simple 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(go_to_simple
-  ${catkin_LIBRARIES}
-)
-
-add_executable(aruco_survey         #new lines - noor
-  src/aruco_survey.cpp
-)
-add_dependencies(aruco_survey 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(aruco_survey
-  ${catkin_LIBRARIES}
-)
-
-add_executable(aruco_survey_better         #new lines - noor
-  src/aruco_survey_better.cpp
-)
-add_dependencies(aruco_survey_better 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(aruco_survey_better
-  ${catkin_LIBRARIES}
-)
-
-add_executable(x_step_test         #new lines - noor
-  src/x_step_test.cpp
-)
-add_dependencies(x_step_test 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(x_step_test
-  ${catkin_LIBRARIES}
-)
-]]
-add_executable(IOT_coords         #new lines - noor
-  src/IOT_coords.cpp
-)
-add_dependencies(IOT_coords 
-  ${${mavros}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(IOT_coords
-  ${catkin_LIBRARIES}
-)
 
 #############
 ## Install ##

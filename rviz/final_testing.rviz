@@ -37,7 +37,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -50,17 +50,13 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
         Robot_1/base_link:
-          Value: true
-        base_link:
-          Value: true
-        base_link_frd:
           Value: true
         camera_color_frame:
           Value: false
@@ -78,52 +74,14 @@ Visualization Manager:
           Value: true
         map:
           Value: true
-        map_ned:
-          Value: true
-        odom:
-          Value: true
-        odom_ned:
-          Value: true
-        robot_1/base_footprint:
-          Value: false
-        robot_1/base_link:
-          Value: true
-        robot_1/base_scan:
-          Value: true
-        robot_1/caster_back_link:
-          Value: true
-        robot_1/imu_link:
-          Value: true
-        robot_1/map:
-          Value: true
         robot_1/odom:
-          Value: false
-        robot_1/wheel_left_link:
-          Value: true
-        robot_1/wheel_right_link:
           Value: true
         robot_1_noor/odom:
-          Value: false
-        robot_2/base_footprint:
-          Value: false
-        robot_2/base_link:
-          Value: true
-        robot_2/base_scan:
-          Value: true
-        robot_2/caster_back_link:
-          Value: true
-        robot_2/imu_link:
-          Value: true
-        robot_2/map:
           Value: true
         robot_2/odom:
-          Value: false
-        robot_2/wheel_left_link:
-          Value: true
-        robot_2/wheel_right_link:
           Value: true
         robot_2_noor/odom:
-          Value: false
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -133,10 +91,6 @@ Visualization Manager:
       Tree:
         map:
           Robot_1/base_link:
-            {}
-          base_link:
-            base_link_frd:
-              {}
             camera_link:
               camera_color_frame:
                 camera_color_optical_frame:
@@ -147,38 +101,6 @@ Visualization Manager:
               camera_depth_frame:
                 camera_depth_optical_frame:
                   {}
-          map_ned:
-            {}
-          robot_1/map:
-            robot_1_noor/odom:
-              robot_1/odom:
-                robot_1/base_footprint:
-                  robot_1/base_link:
-                    robot_1/base_scan:
-                      {}
-                    robot_1/caster_back_link:
-                      {}
-                    robot_1/imu_link:
-                      {}
-                    robot_1/wheel_left_link:
-                      {}
-                    robot_1/wheel_right_link:
-                      {}
-          robot_2/map:
-            robot_2_noor/odom:
-              robot_2/odom:
-                robot_2/base_footprint:
-                  robot_2/base_link:
-                    robot_2/base_scan:
-                      {}
-                    robot_2/caster_back_link:
-                      {}
-                    robot_2/imu_link:
-                      {}
-                    robot_2/wheel_left_link:
-                      {}
-                    robot_2/wheel_right_link:
-                      {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -272,7 +194,7 @@ Visualization Manager:
       Marker Topic: /robot_1/explore/frontiers
       Name: MarkerArray
       Namespaces:
-        frontiers: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -280,7 +202,7 @@ Visualization Manager:
       Marker Topic: /robot_2/explore/frontiers
       Name: MarkerArray
       Namespaces:
-        frontiers: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -288,7 +210,7 @@ Visualization Manager:
       Marker Topic: /robot_1/explore/distance
       Name: Marker
       Namespaces:
-        points_and_lines: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -296,7 +218,7 @@ Visualization Manager:
       Marker Topic: /robot_2/explore/distance
       Name: Marker
       Namespaces:
-        points_and_lines: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -368,10 +290,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 131.2924041748047
+      Scale: 164.69320678710938
       Target Frame: <Fixed Frame>
-      X: 0.024210767820477486
-      Y: 1.8798933029174805
+      X: -0.2919827103614807
+      Y: 1.3093867301940918
     Saved: ~
 Window Geometry:
   Displays:

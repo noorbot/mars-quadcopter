@@ -1,5 +1,0 @@
-<launch>
-    <node pkg="mars-quadcopter" type="locate_marker_1.py" name="locate_marker_1" output="screen"></node>
-    <node pkg="mars-quadcopter" type="locate_marker_3.py" name="locate_marker_3" output="screen"></node>
-    <!-- static_transform_publisher x y z qx qy qz qw frame_id child_frame_id  period_in_ms -->
-</launch>
