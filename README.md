@@ -18,7 +18,7 @@ This project had two main goals when it comes to UAV-UGV collaboration:
 - obstacle pointcloud is published to ROS server.
 - UGVs add obstacle pointcloud to costmap for avoidance.
 
-For detailed information about both of these methods, please read my [thesis](Autonomous UAV-UGV Robot Collaboration for Exploration and Mapping of Unknown Environments.pdf)
+For detailed information about both of these methods, please read my [thesis](/Autonomous UAV-UGV Robot Collaboration for Exploration and Mapping of Unknown Environments.pdf)
 
 ## Pre-Requisites
 - UAV (this project used a custom-built quadcopter running PX4 autopilot)
