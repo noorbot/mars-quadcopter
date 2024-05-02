@@ -18,12 +18,12 @@ This project had two main goals when it comes to UAV-UGV collaboration:
 - obstacle pointcloud is published to ROS server.
 - UGVs add obstacle pointcloud to costmap for avoidance.
 
-For detailed information about both of these methods, please read my [thesis](/Autonomous UAV-UGV Robot Collaboration for Exploration and Mapping of Unknown Environments.pdf)
+For detailed information about both of these methods, please read my [thesis](Autonomous%20UAV-UGV%20Robot%20Collaboration%20for%20Exploration%20and%20Mapping%20of%20Unknown%20Environments.pdf)
 
 ## Pre-Requisites
 - UAV (this project used a custom-built quadcopter running PX4 autopilot)
 - Downwards-facing depth camera able to produce a pointcloud (Intel Realsense D435i with corresponding ROS package)
-- UGV(s) (TUrtlebot3 Burgers were used)
+- UGV(s) (Turtlebot3 Burgers were used)
 - UGV 2D LiDAR
 - [Aruco_detect library](https://github.com/BYUMarsRover/aruco_detect)
 - [Open3D library](https://www.open3d.org/) and [open3d_conversions](https://github.com/marcoesposito1988/open3d_conversions) for ROS.
@@ -58,9 +58,9 @@ Now the isolated obstacles will be published to a topic called outlier_cloud
 To get the UGVs to avoid the obstacles in this pointlcoud, their costmap parameter files must be updated. For the turtlebot this is under `turtlebot3_navigation/param/costmap_common_params.yaml`. Here, the [obstacles plugin](http://wiki.ros.org/costmap_2d/hydro/obstacles) should be used, and a new obstacle observation source should be added, using the outlier_cloud points. 
 
 ## What may need to be modified based on your setup
-- ArUco marker ID numbers in [turtle_tf_broadcaster_1_avg.py](/src/robot localization/turtle_tf_broadcaster_1_avg.py) line 106.
+- ArUco marker ID numbers in [turtle_tf_broadcaster_1_avg.py](https://github.com/noorbot/mars-quadcopter/blob/main/src/robot%20localization/turtle_tf_broadcaster_1_avg.py) line 106.
 - Depending on how many UGVs you are using. Versions of the above codes with the suffix _3 and for  3 UGVs rather than 2.
-- Input pointcloud topic name in [my_o3d_store_points.py]('/src/obstacle mapping/my_o3d_store_points.py') in subscriber line 190.
+- Input pointcloud topic name in [my_o3d_store_points.py](https://github.com/noorbot/mars-quadcopter/blob/main/src/obstacle%20mapping/my_o3d_store_points.py) in subscriber line 190.
 
 
 
